@@ -68,7 +68,7 @@ export default function AdminEnquiries() {
   return (
     <div className="space-y-8 font-sans">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-[#111827]">Enquiries</h1>
+        <h1 className="text-2xl font-medium text-[#111827]">Enquiries</h1>
       </div>
 
       {/* Tabs */}
@@ -140,7 +140,7 @@ export default function AdminEnquiries() {
                     {format(new Date(selectedEnquiry.createdAt), "MMM d, yyyy h:mm a")}
                   </span>
                 </div>
-                <SheetTitle className="text-xl font-semibold text-[#111827]">{selectedEnquiry.name}</SheetTitle>
+                <SheetTitle className="text-xl font-medium text-[#111827]">{selectedEnquiry.name}</SheetTitle>
                 <SheetDescription className="text-[13px] text-[#4B5563] mt-1">
                   Interested in: <strong className="font-medium text-[#111827]">{selectedEnquiry.service}</strong>
                 </SheetDescription>

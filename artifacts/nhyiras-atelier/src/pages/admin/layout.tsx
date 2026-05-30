@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t border-[#EBEBEB]">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-[#0D6E6E] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#0D6E6E] text-white flex items-center justify-center text-xs font-medium shrink-0">
               N
             </div>
             <div className="flex flex-col min-w-0">

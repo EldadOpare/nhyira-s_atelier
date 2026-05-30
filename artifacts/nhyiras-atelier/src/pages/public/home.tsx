@@ -233,16 +233,16 @@ export default function Home() {
           </section>
 
           {/* Marquee Strip */}
-          <div className="bg-[#0A0A0A] overflow-hidden py-4 border-y border-[#0A0A0A]">
+          <div className="bg-[#0D6E6E] overflow-hidden py-4">
             <motion.div
               animate={{ x: ["0%", "-50%"] }}
               transition={{ ease: "linear", duration: 20, repeat: Infinity }}
               className="flex whitespace-nowrap"
             >
-              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-[#F9F5EE] uppercase px-4">
+              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-white uppercase px-4">
                 BALLOON & FLORAL · BACKDROPS · CURATED GIFT SETS · SURPRISE SETUPS · SPECIAL DAY PACKAGES ·
               </div>
-              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-[#F9F5EE] uppercase px-4">
+              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-white uppercase px-4">
                 BALLOON & FLORAL · BACKDROPS · CURATED GIFT SETS · SURPRISE SETUPS · SPECIAL DAY PACKAGES ·
               </div>
             </motion.div>

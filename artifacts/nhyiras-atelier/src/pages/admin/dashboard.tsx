@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   if (isLoading || !stats) {
     return (
       <div className="space-y-8 font-sans">
-        <h1 className="text-2xl font-semibold text-[#111827]">Overview</h1>
+        <h1 className="text-2xl font-medium text-[#111827]">Overview</h1>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-white rounded-2xl border border-[#EBEBEB]" />)}
         </div>
@@ -19,7 +19,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 font-sans">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-[#111827]">Overview</h1>
+        <h1 className="text-2xl font-medium text-[#111827]">Overview</h1>
         <p className="text-[13px] text-[#6B7280]">Welcome back, Nhyira</p>
       </div>
 
@@ -27,19 +27,19 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
           <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">TOTAL ENQUIRIES</p>
-          <p className="text-3xl font-semibold text-[#111827]">{stats.totalEnquiries}</p>
+          <p className="text-3xl font-medium text-[#111827]">{stats.totalEnquiries}</p>
         </div>
         <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
           <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">NEW ENQUIRIES</p>
-          <p className="text-3xl font-semibold text-[#111827]">{stats.newEnquiries}</p>
+          <p className="text-3xl font-medium text-[#111827]">{stats.newEnquiries}</p>
         </div>
         <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
           <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">BOOKED</p>
-          <p className="text-3xl font-semibold text-[#111827]">{stats.bookedEnquiries}</p>
+          <p className="text-3xl font-medium text-[#111827]">{stats.bookedEnquiries}</p>
         </div>
         <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
           <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">PORTFOLIO ITEMS</p>
-          <p className="text-3xl font-semibold text-[#111827]">{stats.totalPortfolioItems}</p>
+          <p className="text-3xl font-medium text-[#111827]">{stats.totalPortfolioItems}</p>
         </div>
       </div>
 
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         {/* Recent Enquiries */}
         <div className="lg:col-span-2 border border-[#EBEBEB] rounded-2xl overflow-hidden bg-white">
           <div className="p-6 border-b border-[#EBEBEB]">
-            <h2 className="text-[15px] font-semibold text-[#111827]">Recent Enquiries</h2>
+            <h2 className="text-[15px] font-medium text-[#111827]">Recent Enquiries</h2>
           </div>
           <div className="p-0">
             {!stats.recentEnquiries?.length ? (
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
         {/* Enquiries by Service */}
         <div className="border border-[#EBEBEB] rounded-2xl overflow-hidden bg-white">
           <div className="p-6 border-b border-[#EBEBEB]">
-            <h2 className="text-[15px] font-semibold text-[#111827]">By Service</h2>
+            <h2 className="text-[15px] font-medium text-[#111827]">By Service</h2>
           </div>
           <div className="p-6">
             {!stats.enquiriesByService?.length ? (

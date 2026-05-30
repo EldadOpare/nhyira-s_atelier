@@ -126,7 +126,7 @@ export default function AdminPortfolio() {
   return (
     <div className="space-y-8 font-sans">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-[#111827]">Portfolio</h1>
+        <h1 className="text-2xl font-medium text-[#111827]">Portfolio</h1>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenModal()} className="bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-lg text-[13px] font-medium h-9 px-4">
@@ -135,7 +135,7 @@ export default function AdminPortfolio() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-white border border-[#EBEBEB] p-8 rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-[#111827] mb-6">
+              <DialogTitle className="text-xl font-medium text-[#111827] mb-6">
                 {editingId ? "Edit Portfolio Item" : "New Portfolio Item"}
               </DialogTitle>
             </DialogHeader>
@@ -280,7 +280,7 @@ export default function AdminPortfolio() {
               </div>
               <div className="p-5 flex-1 flex flex-col">
                 <p className="text-[12px] font-medium text-[#6B7280] mb-1">{item.category}</p>
-                <h3 className="text-[16px] font-semibold text-[#111827] mb-4">{item.title}</h3>
+                <h3 className="text-[16px] font-medium text-[#111827] mb-4">{item.title}</h3>
                 
                 <div className="mt-auto flex justify-between items-center pt-4 border-t border-[#EBEBEB]">
                   <span className="text-[12px] text-[#9CA3AF]">{format(new Date(item.createdAt), "MMM d, yyyy")}</span>
