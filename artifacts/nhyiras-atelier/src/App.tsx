@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
-// Import pages
 import Home from "./pages/public/home";
 import AdminLogin from "./pages/admin/login";
 import AdminLayout from "./pages/admin/layout";
@@ -18,20 +17,15 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/admin">
-        <Switch>
-          <Route path="/" component={AdminLogin} />
-          <Route path="/dashboard">
-            <AdminLayout><AdminDashboard /></AdminLayout>
-          </Route>
-          <Route path="/portfolio">
-            <AdminLayout><AdminPortfolio /></AdminLayout>
-          </Route>
-          <Route path="/enquiries">
-            <AdminLayout><AdminEnquiries /></AdminLayout>
-          </Route>
-          <Route component={NotFound} />
-        </Switch>
+      <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/dashboard">
+        <AdminLayout><AdminDashboard /></AdminLayout>
+      </Route>
+      <Route path="/admin/portfolio">
+        <AdminLayout><AdminPortfolio /></AdminLayout>
+      </Route>
+      <Route path="/admin/enquiries">
+        <AdminLayout><AdminEnquiries /></AdminLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>
