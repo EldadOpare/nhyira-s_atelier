@@ -32,10 +32,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-[#F7F7F7] flex font-sans">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 w-[220px] h-[100vh] bg-[#FFFFFF] flex flex-col border-r border-[#E5E5E5] shrink-0">
-        <div className="p-6">
-          <div className="flex flex-col items-start gap-0.5">
-            <span className="font-sans text-[14px] font-semibold text-[#111827]">Nhyira's</span>
-            <span className="font-sans text-[10px] tracking-widest text-[#6B7280] uppercase">ATELIER</span>
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex flex-col items-start gap-0">
+            <span className="font-brand text-3xl text-[#C9A84C] leading-tight">Nhyira's</span>
+            <span className="font-label text-[9px] tracking-[0.25em] text-[#0A4F4F] uppercase mt-0.5">ATELIER</span>
           </div>
         </div>
 
