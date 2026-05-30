@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { FaInstagram, FaTiktok, FaWhatsapp } from "react-icons/fa";
+import { FaInstagram, FaTiktok, FaWhatsapp, FaArrowRight } from "react-icons/fa";
 import { useListPortfolio, useSubmitEnquiry } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import card1 from "@assets/1_1780130493933.png";
 import card2 from "@assets/2_1780130493934.png";
@@ -50,7 +51,7 @@ function LoaderScreen({ onComplete }: { onComplete: () => void }) {
 
   const item = {
     hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const } }
   };
 
   return (
@@ -91,6 +92,7 @@ function LoaderScreen({ onComplete }: { onComplete: () => void }) {
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
   const { data: portfolioItems, isLoading: portfolioLoading } = useListPortfolio({ published: true });
   const submitEnquiry = useSubmitEnquiry();
   const { toast } = useToast();
@@ -99,14 +101,21 @@ export default function Home() {
   const [activePortfolioItem, setActivePortfolioItem] = useState<any>(null);
   
   useEffect(() => {
-    if (activePortfolioItem) {
-      const interval = setInterval(() => {
-        if (activePortfolioItem.images && activePortfolioItem.images.length > 1) {
-          setSelectedImageIndex((prev) => (prev + 1) % activePortfolioItem.images.length);
-        }
-      }, 3000);
-      return () => clearInterval(interval);
-    }
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!activePortfolioItem) return;
+    const interval = setInterval(() => {
+      if (activePortfolioItem.images && activePortfolioItem.images.length > 1) {
+        setSelectedImageIndex((prev) => (prev + 1) % activePortfolioItem.images.length);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
   }, [activePortfolioItem]);
 
   const form = useForm<z.infer<typeof enquirySchema>>({
@@ -142,125 +151,170 @@ export default function Home() {
 
       {!loading && (
         <>
-          {/* Navigation */}
+          {/* Minimal Nav */}
           <motion.nav 
             initial={{ y: -100 }}
             animate={{ y: 0 }}
             transition={{ duration: 0.8 }}
-            className="fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-[#0D6E6E] py-4 px-6 md:px-12 flex justify-between items-center"
+            className={`fixed top-0 w-full z-40 transition-all duration-500 py-4 px-6 md:px-12 flex justify-between items-center ${scrolled ? 'bg-white border-b border-[#0D6E6E]/10' : 'bg-transparent'}`}
           >
-            <div className="flex items-center gap-2">
-              <span className="font-brand text-2xl text-[#C9A84C]">Nhyira's</span>
-              <span className="font-label text-sm tracking-widest text-[#0A4F4F] mt-2">ATELIER</span>
+            <div className="flex items-center gap-3">
+              <span className="font-brand text-3xl text-[#0A4F4F]">Nhyira's</span>
+              <span className="font-label text-[10px] tracking-[0.3em] text-[#0A4F4F] mt-2">ATELIER</span>
             </div>
-            <div className="hidden md:flex gap-8 font-label text-sm tracking-wider">
-              <a href="#works" className="hover:text-[#0D6E6E] transition-colors">WORKS</a>
-              <a href="#services" className="hover:text-[#0D6E6E] transition-colors">SERVICES</a>
-              <a href="#about" className="hover:text-[#0D6E6E] transition-colors">ABOUT</a>
-              <a href="#contact" className="hover:text-[#0D6E6E] transition-colors">CONTACT</a>
+            <div className="hidden md:flex gap-8 font-label text-[10px] tracking-[0.2em]">
+              <a href="#works" className="hover:text-[#C9A84C] transition-colors">WORKS</a>
+              <a href="#services" className="hover:text-[#C9A84C] transition-colors">SERVICES</a>
+              <a href="#contact" className="hover:text-[#C9A84C] transition-colors">CONTACT</a>
             </div>
           </motion.nav>
 
           {/* Hero */}
-          <section className="min-h-screen pt-24 px-6 md:px-12 flex flex-col justify-center items-center text-center bg-white relative">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1 }}
-              className="max-w-4xl"
-            >
-              <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl leading-tight mb-8 text-[#0A4F4F]">
-                Curated Experiences for Your Most Beautiful Moments
-              </h1>
-              <p className="font-sans text-lg md:text-xl text-[#0D6E6E] mb-12 tracking-wide font-light">
-                Balloon & Floral Installations · Backdrops · Curated Gift Sets · Surprise Setups
-              </p>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <a href="#contact" className="px-8 py-4 bg-[#0D6E6E] text-white font-label text-sm tracking-widest hover:bg-[#0A4F4F] transition-colors duration-300 rounded-none">
-                  GET IN TOUCH
-                </a>
-                <a href="#works" className="px-8 py-4 bg-[#F9F5EE] text-[#0A4F4F] border border-[#0D6E6E] font-label text-sm tracking-widest hover:bg-[#0D6E6E] hover:text-white transition-colors duration-300 rounded-none">
-                  VIEW OUR WORK
-                </a>
+          <section className="min-h-screen pt-24 px-6 md:px-12 flex items-center bg-white relative">
+            <div className="absolute top-32 left-6 md:left-12">
+              <span className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">//ATELIER</span>
+            </div>
+            
+            <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-12 mt-12">
+              {/* Left Column */}
+              <div className="w-full lg:w-[60%] flex flex-col z-10">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.2 }}
+                >
+                  <h1 className="font-heading text-[12vw] lg:text-[7vw] leading-[0.9] tracking-tight">
+                    <span className="block text-[#0A4F4F]">Curated</span>
+                    <span className="block text-[#C9A84C] italic pr-8 lg:text-right">Experiences</span>
+                    <span className="block font-sans font-light text-2xl lg:text-4xl text-[#0A4F4F] my-4 ml-2">for every</span>
+                    <span className="block text-[#0A4F4F]">Moment.</span>
+                  </h1>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1, delay: 0.8 }}
+                  className="mt-16 flex items-center gap-6"
+                >
+                  <a href="#contact" className="flex items-center gap-2 text-[10px] font-label tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
+                    GET IN TOUCH <FaArrowRight />
+                  </a>
+                  <a href="#works" className="text-[10px] font-label tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
+                    VIEW WORKS
+                  </a>
+                </motion.div>
               </div>
-            </motion.div>
+
+              {/* Right Column */}
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 1, delay: 0.6 }}
+                className="w-full lg:w-[40%] flex justify-end"
+              >
+                <div className="flex flex-col space-y-4 text-right">
+                  {services.map((service, idx) => (
+                    <div key={idx} className="flex items-center justify-end gap-3 text-[10px] font-label tracking-[0.2em] text-[#0D6E6E] uppercase">
+                      <span className="w-1 h-1 bg-[#C9A84C] rounded-full"></span>
+                      {service}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 1.5, delay: 1, ease: "easeInOut" }}
+              className="absolute bottom-12 left-0 right-0 h-px bg-[#0D6E6E]/20 origin-left"
+            />
           </section>
 
-          {/* Services */}
-          <section id="services" className="py-24 px-6 md:px-12 bg-[#F9F5EE]">
+          {/* Marquee Strip */}
+          <div className="bg-[#0A0A0A] overflow-hidden py-4 border-y border-[#0A0A0A]">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="max-w-7xl mx-auto"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ ease: "linear", duration: 20, repeat: Infinity }}
+              className="flex whitespace-nowrap"
             >
-              <div className="mb-16 text-center">
-                <h2 className="font-label text-sm tracking-[0.3em] text-[#0D6E6E] mb-4">WHAT WE DO</h2>
-                <h3 className="font-heading text-4xl md:text-5xl text-[#0A4F4F]">Bespoke Services</h3>
+              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-[#F9F5EE] uppercase px-4">
+                BALLOON & FLORAL · BACKDROPS · CURATED GIFT SETS · SURPRISE SETUPS · SPECIAL DAY PACKAGES ·
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {services.map((service, i) => (
-                  <motion.div
-                    key={service}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-white p-8 border-l-4 border-[#0D6E6E] rounded-none group hover:bg-[#0A4F4F] transition-colors duration-500"
-                  >
-                    <h4 className="font-heading text-2xl text-[#0A4F4F] group-hover:text-white mb-4">{service}</h4>
-                    <p className="font-sans text-gray-600 group-hover:text-gray-300 font-light">
-                      Meticulously crafted to transform your vision into an unforgettable reality.
-                    </p>
-                  </motion.div>
-                ))}
+              <div className="flex gap-4 font-label text-[11px] tracking-[0.3em] text-[#F9F5EE] uppercase px-4">
+                BALLOON & FLORAL · BACKDROPS · CURATED GIFT SETS · SURPRISE SETUPS · SPECIAL DAY PACKAGES ·
               </div>
             </motion.div>
+          </div>
+
+          {/* Services */}
+          <section id="services" className="py-32 px-6 md:px-12 bg-white relative">
+            <div className="absolute top-20 left-6 md:left-12 z-0">
+              <span className="font-heading text-[20vw] leading-none text-gray-100 opacity-50 select-none">01</span>
+            </div>
+            
+            <div className="max-w-7xl mx-auto relative z-10 pt-20">
+              <div className="mb-24">
+                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">//WHAT WE DO</p>
+                <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F]">Bespoke Services</h2>
+              </div>
+              
+              <div className="flex flex-col border-t border-[#0A4F4F]/10">
+                {services.map((service, i) => (
+                  <div key={service} className="group flex items-center justify-between py-12 px-6 border-b border-[#0A4F4F]/10 hover:bg-[#0D6E6E]/5 transition-colors duration-500 cursor-pointer">
+                    <span className="font-label text-sm text-[#0A4F4F]/40 tracking-widest w-16">0{i + 1}</span>
+                    <h3 className="flex-1 font-heading text-3xl md:text-5xl text-[#0A4F4F] text-center transition-transform duration-500 group-hover:scale-[1.02]">{service}</h3>
+                    <div className="w-16 flex justify-end">
+                      <FaArrowRight className="text-[#0A4F4F] opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
 
           {/* Works */}
-          <section id="works" className="py-24 px-6 md:px-12 bg-white">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-16 text-center">
-                <h2 className="font-label text-sm tracking-[0.3em] text-[#0D6E6E] mb-4">PORTFOLIO</h2>
-                <h3 className="font-heading text-4xl md:text-5xl text-[#0A4F4F]">Our Works</h3>
+          <section id="works" className="py-32 px-6 md:px-12 bg-[#F9F5EE]">
+            <div className="max-w-full mx-auto">
+              <div className="mb-20">
+                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">//PORTFOLIO</p>
+                <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F]">Our Works</h2>
               </div>
 
               {portfolioLoading ? (
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0A4F4F]/10 border border-[#0A4F4F]/10">
                   {[1, 2, 3, 4, 5, 6].map(i => (
-                    <Skeleton key={i} className="w-full h-80 bg-[#F9F5EE] rounded-none" />
+                    <div key={i} className="aspect-[4/3] bg-white animate-pulse" />
                   ))}
                 </div>
               ) : !portfolioItems?.length ? (
-                <div className="text-center py-20">
-                  <p className="font-serif italic text-2xl text-[#0D6E6E]">More beautiful works coming soon.</p>
+                <div className="text-center py-32 bg-white border border-[#0A4F4F]/10">
+                  <p className="font-heading italic text-3xl text-[#0A4F4F]">Curating beautiful moments...</p>
                 </div>
               ) : (
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0A4F4F]/10 border border-[#0A4F4F]/10">
                   {portfolioItems.map((item: any, i: number) => (
                     <motion.div
                       key={item.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.1 }}
-                      className="relative overflow-hidden group cursor-pointer break-inside-avoid rounded-none"
+                      className="relative overflow-hidden group cursor-pointer aspect-[4/3] bg-white"
                       onClick={() => {
                         setActivePortfolioItem(item);
                         setSelectedImageIndex(0);
                       }}
                     >
                       <img 
-                        src={item.images[0] || "https://placehold.co/600x800/F9F5EE/0D6E6E?text=Nhyira's"} 
+                        src={item.images[0] || "https://placehold.co/800x600/F9F5EE/0D6E6E?text=Nhyira's"} 
                         alt={item.title}
-                        className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-[#0A4F4F]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-6 text-center">
-                        <p className="font-label text-xs tracking-widest text-[#C9A84C] mb-2">{item.category}</p>
-                        <h4 className="font-heading text-3xl text-white">{item.title}</h4>
+                      <div className="absolute inset-0 bg-[#0A4F4F]/90 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-8 text-center">
+                        <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] mb-4 uppercase">{item.category}</p>
+                        <h4 className="font-heading text-4xl text-white">{item.title}</h4>
                       </div>
                     </motion.div>
                   ))}
@@ -269,308 +323,317 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Cards Showcase */}
-          <section id="cards" className="py-24 px-6 md:px-12 bg-[#F9F5EE] overflow-hidden">
+          {/* Business Cards Showcase */}
+          <section id="cards" className="py-32 px-6 md:px-12 bg-white overflow-hidden">
             <div className="max-w-7xl mx-auto">
               <div className="mb-20 text-center">
-                <h2 className="font-label text-sm tracking-[0.3em] text-[#0D6E6E] mb-4">THE ATELIER</h2>
-                <h3 className="font-heading text-4xl md:text-5xl text-[#0A4F4F]">Our Cards</h3>
+                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">//THE ATELIER</p>
               </div>
               
-              <div className="flex flex-col items-center justify-center min-h-[400px] relative perspective-1000">
-                <div className="flex justify-center items-center gap-4 md:gap-8 flex-wrap">
+              <div className="flex flex-col items-center justify-center min-h-[500px] relative perspective-1000">
+                <div className="flex justify-center items-center gap-0 md:-gap-8 flex-row relative w-full max-w-4xl mx-auto h-[400px]">
                   {[card1, card2, card3].map((card, i) => (
                     <motion.div
                       key={i}
-                      animate={{
-                        y: [0, -10, 0],
+                      initial={{ rotateY: 20, rotateX: 10, z: -100 }}
+                      whileInView={{ rotateY: 0, rotateX: 0, z: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, delay: i * 0.2 }}
+                      whileHover={{ 
+                        y: -20, 
+                        scale: 1.05, 
+                        rotateY: 0, 
+                        rotateX: 0,
+                        zIndex: 50,
+                        transition: { duration: 0.4 } 
                       }}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.5
-                      }}
-                      whileHover={{ scale: 1.1, zIndex: 10 }}
-                      className="relative"
+                      className="relative transform-gpu -mx-12 md:-mx-8 shadow-2xl origin-bottom"
+                      style={{ zIndex: i }}
                     >
-                      <img src={card} alt={`Business Card ${i + 1}`} className="w-64 md:w-80 shadow-none" />
+                      <img src={card} alt={`Business Card ${i + 1}`} className="w-48 md:w-80 h-auto" />
                     </motion.div>
                   ))}
+                </div>
+                
+                <div className="mt-16 w-full flex flex-col items-center">
+                  <div className="h-px w-24 bg-[#0D6E6E]/20 mb-6"></div>
+                  <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Nhyira's Atelier · Curated Experiences</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* About */}
-          <section id="about" className="py-32 px-6 md:px-12 bg-white">
-            <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-16">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="flex-1"
-              >
-                <div className="w-16 h-px bg-[#0D6E6E] mb-8" />
-                <h2 className="font-heading text-4xl md:text-5xl text-[#0A4F4F] mb-8 leading-tight">
-                  We believe every celebration deserves to be curated with love.
-                </h2>
-                <p className="font-sans text-lg text-gray-600 font-light leading-relaxed">
-                  From intimate surprises to grand installations, Nhyira's Atelier transforms spaces into memories. 
-                  We approach each setup not just as decoration, but as an expression of emotion and a reflection of your unique story.
-                </p>
-              </motion.div>
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="flex-1 bg-[#F9F5EE] p-12 md:p-16 border-l border-[#0D6E6E]"
-              >
-                <p className="font-heading text-3xl md:text-4xl text-[#0A4F4F] italic">
-                  "You are the heart of what we do."
-                </p>
-              </motion.div>
+          <section id="about" className="min-h-[80vh] flex flex-col lg:flex-row bg-white">
+            <div className="w-full lg:w-1/2 p-12 lg:p-24 flex items-center">
+              <h2 className="font-heading text-5xl lg:text-7xl text-[#0A4F4F] leading-tight italic">
+                We believe every celebration deserves to be curated with love.
+              </h2>
+            </div>
+            <div className="w-full lg:w-1/2 bg-[#F9F5EE] p-12 lg:p-24 flex flex-col justify-center">
+              <div className="w-16 h-px bg-[#C9A84C] mb-12" />
+              <blockquote className="font-heading text-4xl lg:text-5xl text-[#0A4F4F] italic leading-snug mb-12">
+                "You are the heart of what we do."
+              </blockquote>
+              <p className="font-brand text-4xl text-[#0A4F4F]">With love, Nhyira</p>
             </div>
           </section>
 
           {/* Form & Contact */}
-          <section id="contact" className="py-24 px-6 md:px-12 bg-[#0A4F4F]">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="font-label text-sm tracking-[0.3em] text-[#C9A84C] mb-4">BOOK A MOMENT</h2>
-                <h3 className="font-heading text-4xl md:text-5xl text-white mb-8">Let's Create Together</h3>
+          <section id="contact" className="bg-[#0A4F4F] flex flex-col">
+            {/* Top Half: Form */}
+            <div className="bg-white py-32 px-6 md:px-12 w-full">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-20 text-center">
+                  <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">//BOOK A MOMENT</p>
+                  <h3 className="font-heading text-5xl md:text-6xl text-[#0A4F4F]">Let's Create Together</h3>
+                </div>
                 
-                <div className="bg-[#F9F5EE] p-8 md:p-12">
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">NAME</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your Name" {...field} className="border-[#0D6E6E]/30 focus-visible:ring-[#0D6E6E] rounded-none bg-white" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">EMAIL</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="Your Email" {...field} className="border-[#0D6E6E]/30 focus-visible:ring-[#0D6E6E] rounded-none bg-white" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">PHONE</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your Phone (Optional)" {...field} className="border-[#0D6E6E]/30 focus-visible:ring-[#0D6E6E] rounded-none bg-white" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="eventDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">DATE</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} className="border-[#0D6E6E]/30 focus-visible:ring-[#0D6E6E] rounded-none bg-white" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <FormField
                         control={form.control}
-                        name="service"
+                        name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">SERVICE</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="border-[#0D6E6E]/30 focus:ring-[#0D6E6E] rounded-none bg-white">
-                                  <SelectValue placeholder="Select a service" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {services.map(s => (
-                                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="message"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">MESSAGE</FormLabel>
+                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Name</FormLabel>
                             <FormControl>
-                              <Textarea placeholder="Tell us about your vision..." className="min-h-[120px] border-[#0D6E6E]/30 focus-visible:ring-[#0D6E6E] rounded-none bg-white" {...field} />
+                              <Input placeholder="Your Name" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="Your Email" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your Phone (Optional)" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="eventDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white font-label tracking-widest rounded-none py-6">
+                    <FormField
+                      control={form.control}
+                      name="service"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Service</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="border-0 border-b border-[#0A4F4F]/20 focus:ring-0 focus:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2 shadow-none">
+                                <SelectValue placeholder="Select a service" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-none border-[#0A4F4F]/20 bg-white">
+                              {services.map(s => (
+                                <SelectItem key={s} value={s} className="font-heading text-lg focus:bg-[#F9F5EE] focus:text-[#0A4F4F] rounded-none cursor-pointer py-3">{s}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Message</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Tell us about your vision..." className="min-h-[100px] border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2 resize-none" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="pt-8">
+                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-none py-8 transition-colors">
                         {submitEnquiry.isPending ? "SENDING..." : "SEND ENQUIRY"}
                       </Button>
-                    </form>
-                  </Form>
-                </div>
-              </motion.div>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="flex flex-col justify-center"
-              >
-                <h2 className="font-label text-sm tracking-[0.3em] text-[#C9A84C] mb-4">STAY CONNECTED</h2>
-                <h3 className="font-heading text-4xl md:text-5xl text-white mb-12">Connect With Us</h3>
+            {/* Bottom Half: Socials */}
+            <div className="py-24 px-6 md:px-12 w-full max-w-7xl mx-auto">
+              <div className="flex flex-col space-y-0 border-t border-white/20">
+                <a href="https://instagram.com/nhyiras_atelier" target="_blank" rel="noreferrer" className="group flex items-center justify-between py-12 border-b border-white/20 hover:bg-white/5 transition-colors px-6">
+                  <div className="flex items-center gap-8">
+                    <FaInstagram className="w-8 h-8 text-[#C9A84C]" />
+                    <span className="font-heading text-4xl md:text-5xl text-white">Instagram</span>
+                  </div>
+                  <FaArrowRight className="text-white opacity-0 group-hover:opacity-100 group-hover:-rotate-45 transition-all duration-300" />
+                </a>
                 
-                <div className="space-y-8">
-                  <a href="https://instagram.com/nhyiras_atelier" target="_blank" rel="noreferrer" className="flex items-center gap-6 group">
-                    <div className="w-16 h-16 border border-[#C9A84C] flex items-center justify-center group-hover:bg-[#C9A84C] transition-colors duration-300">
-                      <FaInstagram className="w-6 h-6 text-[#C9A84C] group-hover:text-white" />
-                    </div>
-                    <div>
-                      <p className="font-label text-sm tracking-widest text-[#C9A84C]">INSTAGRAM</p>
-                      <p className="font-heading text-2xl text-white">@nhyiras_atelier</p>
-                    </div>
-                  </a>
-                  
-                  <a href="#" className="flex items-center gap-6 group">
-                    <div className="w-16 h-16 border border-[#C9A84C] flex items-center justify-center group-hover:bg-[#C9A84C] transition-colors duration-300">
-                      <FaTiktok className="w-6 h-6 text-[#C9A84C] group-hover:text-white" />
-                    </div>
-                    <div>
-                      <p className="font-label text-sm tracking-widest text-[#C9A84C]">TIKTOK</p>
-                      <p className="font-heading text-2xl text-white">@nhyiras_atelier</p>
-                    </div>
-                  </a>
-                  
-                  <a href="tel:+233558112779" className="flex items-center gap-6 group">
-                    <div className="w-16 h-16 border border-[#C9A84C] flex items-center justify-center group-hover:bg-[#C9A84C] transition-colors duration-300">
-                      <FaWhatsapp className="w-6 h-6 text-[#C9A84C] group-hover:text-white" />
-                    </div>
-                    <div>
-                      <p className="font-label text-sm tracking-widest text-[#C9A84C]">WHATSAPP</p>
-                      <p className="font-heading text-2xl text-white">055 811 2779</p>
-                    </div>
-                  </a>
-                </div>
-              </motion.div>
+                <a href="#" className="group flex items-center justify-between py-12 border-b border-white/20 hover:bg-white/5 transition-colors px-6">
+                  <div className="flex items-center gap-8">
+                    <FaTiktok className="w-8 h-8 text-[#C9A84C]" />
+                    <span className="font-heading text-4xl md:text-5xl text-white">TikTok</span>
+                  </div>
+                  <FaArrowRight className="text-white opacity-0 group-hover:opacity-100 group-hover:-rotate-45 transition-all duration-300" />
+                </a>
+                
+                <a href="tel:+233558112779" className="group flex items-center justify-between py-12 border-b border-white/20 hover:bg-white/5 transition-colors px-6">
+                  <div className="flex items-center gap-8">
+                    <FaWhatsapp className="w-8 h-8 text-[#C9A84C]" />
+                    <span className="font-heading text-4xl md:text-5xl text-white">WhatsApp</span>
+                  </div>
+                  <FaArrowRight className="text-white opacity-0 group-hover:opacity-100 group-hover:-rotate-45 transition-all duration-300" />
+                </a>
+              </div>
             </div>
           </section>
 
           {/* Footer */}
-          <footer className="bg-[#052828] py-16 px-6 md:px-12 border-t border-[#0A4F4F]">
+          <footer className="bg-[#0A0A0A] py-16 px-6 md:px-12">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-              <div className="text-center md:text-left">
-                <h2 className="font-brand text-4xl text-[#F9F5EE] mb-2">Nhyira's Atelier</h2>
-                <p className="font-serif italic text-[#C9A84C]">Curated Experiences</p>
-              </div>
-              <div className="flex gap-6">
-                <a href="#" className="text-[#F9F5EE] hover:text-[#C9A84C] transition-colors"><FaInstagram size={24} /></a>
-                <a href="#" className="text-[#F9F5EE] hover:text-[#C9A84C] transition-colors"><FaTiktok size={24} /></a>
-                <a href="#" className="text-[#F9F5EE] hover:text-[#C9A84C] transition-colors"><FaWhatsapp size={24} /></a>
-              </div>
-              <p className="font-sans text-sm text-[#F9F5EE]/60 font-light">
-                © 2025 Nhyira's Atelier. All rights reserved.
+              <h2 className="font-brand text-4xl text-[#C9A84C]">Nhyira's Atelier</h2>
+              <p className="font-label text-[10px] tracking-[0.2em] text-[#F9F5EE]/60 uppercase">
+                &copy; {new Date().getFullYear()} Nhyira's Atelier. All rights reserved.
               </p>
             </div>
           </footer>
 
           {/* Portfolio Modal */}
-          <AnimatePresence>
-            {activePortfolioItem && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex bg-white/95 backdrop-blur-sm p-4 md:p-12"
-              >
-                <div className="w-full max-w-6xl mx-auto bg-[#F9F5EE] flex flex-col md:flex-row shadow-2xl relative border border-[#0D6E6E]/20">
-                  <button 
-                    onClick={() => setActivePortfolioItem(null)}
-                    className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center bg-white text-[#0A4F4F] border border-[#0D6E6E] hover:bg-[#0A4F4F] hover:text-white transition-colors"
-                  >
-                    ✕
-                  </button>
-                  
-                  <div className="w-full md:w-3/5 relative overflow-hidden bg-black flex items-center justify-center min-h-[400px]">
+          <Dialog open={!!activePortfolioItem} onOpenChange={(open) => !open && setActivePortfolioItem(null)}>
+            <DialogContent className="max-w-[100vw] w-full h-[100dvh] max-h-[100dvh] p-0 border-0 bg-black/95 rounded-none flex flex-col justify-center items-center">
+              {activePortfolioItem && (
+                <div className="w-full h-full flex flex-col md:flex-row">
+                  {/* Left: Images */}
+                  <div className="flex-1 h-1/2 md:h-full relative overflow-hidden bg-[#0A0A0A]">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={selectedImageIndex}
                         src={activePortfolioItem.images[selectedImageIndex]}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 1 }}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="absolute inset-0 w-full h-full object-contain"
+                        alt={`${activePortfolioItem.title} - Image ${selectedImageIndex + 1}`}
                       />
                     </AnimatePresence>
+                    {activePortfolioItem.images.length > 1 && (
+                      <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-20">
+                        {activePortfolioItem.images.map((_: any, idx: number) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedImageIndex(idx)}
+                            className={`h-1 transition-all duration-300 ${idx === selectedImageIndex ? 'w-8 bg-[#C9A84C]' : 'w-4 bg-white/30 hover:bg-white/60'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="w-full md:w-2/5 p-8 md:p-12 flex flex-col justify-center overflow-y-auto">
-                    <p className="font-label text-sm tracking-widest text-[#0D6E6E] mb-4">{activePortfolioItem.category}</p>
-                    <h2 className="font-heading text-4xl text-[#0A4F4F] mb-6">{activePortfolioItem.title}</h2>
+                  {/* Right: Details */}
+                  <div className="w-full md:w-[400px] lg:w-[500px] bg-white h-1/2 md:h-full p-8 md:p-12 overflow-y-auto">
+                    <button 
+                      onClick={() => setActivePortfolioItem(null)}
+                      className="absolute top-6 right-6 z-50 text-[#0A4F4F] hover:text-[#C9A84C] font-label text-[10px] tracking-[0.2em] uppercase"
+                    >
+                      CLOSE ✕
+                    </button>
                     
-                    {activePortfolioItem.description && (
-                      <p className="font-sans text-gray-700 font-light mb-8 leading-relaxed">
-                        {activePortfolioItem.description}
-                      </p>
-                    )}
-                    
-                    {activePortfolioItem.packageDetails && (
-                      <div className="mb-8">
-                        <h3 className="font-label text-xs tracking-widest text-[#0A4F4F] mb-3">PACKAGE DETAILS</h3>
-                        <p className="font-sans text-sm text-gray-600 font-light whitespace-pre-wrap">{activePortfolioItem.packageDetails}</p>
+                    <div className="mt-8 md:mt-12 h-full flex flex-col">
+                      <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] mb-4 uppercase">{activePortfolioItem.category}</p>
+                      <h2 className="font-heading text-4xl lg:text-5xl text-[#0A4F4F] mb-6">{activePortfolioItem.title}</h2>
+                      
+                      {activePortfolioItem.description && (
+                        <p className="font-sans text-sm text-gray-600 mb-8 font-light leading-relaxed">
+                          {activePortfolioItem.description}
+                        </p>
+                      )}
+
+                      <div className="mt-auto space-y-6 pt-8 border-t border-[#0A4F4F]/10">
+                        {activePortfolioItem.packageDetails && (
+                          <div>
+                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">PACKAGE DETAILS</p>
+                            <p className="font-sans text-sm text-gray-600">{activePortfolioItem.packageDetails}</p>
+                          </div>
+                        )}
+                        {activePortfolioItem.estimatedBudget && (
+                          <div>
+                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">ESTIMATED BUDGET</p>
+                            <p className="font-sans text-sm text-[#0A4F4F]">{activePortfolioItem.estimatedBudget}</p>
+                          </div>
+                        )}
+                        {activePortfolioItem.tags && activePortfolioItem.tags.length > 0 && (
+                          <div>
+                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">TAGS</p>
+                            <div className="flex flex-wrap gap-2">
+                              {activePortfolioItem.tags.map((tag: string) => (
+                                <span key={tag} className="px-3 py-1 bg-[#F9F5EE] text-[#0A4F4F] text-[10px] font-label tracking-widest uppercase">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {activePortfolioItem.estimatedBudget && (
-                      <div className="mt-auto">
-                        <h3 className="font-label text-xs tracking-widest text-[#0A4F4F] mb-2">ESTIMATED BUDGET</h3>
-                        <p className="font-serif italic text-xl text-[#0D6E6E]">{activePortfolioItem.estimatedBudget}</p>
+                      
+                      <div className="mt-12">
+                        <Button 
+                          onClick={() => {
+                            setActivePortfolioItem(null);
+                            setTimeout(() => {
+                              const el = document.getElementById('contact');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                            }, 300);
+                          }}
+                          className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white rounded-none py-6 font-label text-[10px] tracking-[0.2em] uppercase"
+                        >
+                          ENQUIRE ABOUT THIS STYLE
+                        </Button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

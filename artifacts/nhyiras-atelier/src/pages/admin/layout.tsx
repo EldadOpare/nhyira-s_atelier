@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [session, isLoading, isError, setLocation]);
 
   if (isLoading) {
-    return <div className="min-h-screen bg-[#F9F5EE] flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">Loading...</div>;
   }
 
   if (!session?.authenticated) {
@@ -28,52 +28,75 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   };
 
-  const navItems = [
-    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Portfolio", href: "/admin/portfolio", icon: ImageIcon },
-    { name: "Enquiries", href: "/admin/enquiries", icon: MessageSquare },
-  ];
-
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-[#F7F7F7] flex font-sans">
       {/* Sidebar */}
-      <aside className="w-[220px] bg-[#F9F5EE] flex flex-col border-r border-[#0D6E6E]/10 rounded-r-[2rem] my-4 ml-0 shrink-0">
-        <div className="p-8">
-          <div className="flex flex-col items-start gap-1">
-            <span className="font-brand text-2xl text-[#C9A84C]">Nhyira's</span>
-            <span className="font-label text-[10px] tracking-widest text-[#0A4F4F]">ATELIER</span>
+      <aside className="fixed top-0 left-0 w-[220px] h-[100vh] bg-[#FFFFFF] flex flex-col border-r border-[#E5E5E5] shrink-0">
+        <div className="p-6">
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="font-sans text-[14px] font-semibold text-[#111827]">Nhyira's</span>
+            <span className="font-sans text-[10px] tracking-widest text-[#6B7280] uppercase">ATELIER</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {navItems.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href}>
-                <div className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-200 rounded-full font-sans text-sm ${isActive ? "bg-[#0D6E6E] text-white" : "text-[#0A4F4F] hover:bg-[#0D6E6E]/10"}`}>
-                  <Icon size={18} />
-                  <span>{item.name}</span>
-                </div>
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+          {/* Group 1 */}
+          <div className="space-y-1">
+            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">OVERVIEW</h3>
+            <Link href="/admin/dashboard">
+              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/dashboard" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
+                <LayoutDashboard size={16} className={location === "/admin/dashboard" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
+                <span>Dashboard</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Group 2 */}
+          <div className="space-y-1">
+            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">MANAGE</h3>
+            <Link href="/admin/portfolio">
+              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/portfolio" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
+                <ImageIcon size={16} className={location === "/admin/portfolio" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
+                <span>Portfolio</span>
+              </div>
+            </Link>
+            <Link href="/admin/enquiries">
+              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/enquiries" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
+                <MessageSquare size={16} className={location === "/admin/enquiries" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
+                <span>Enquiries</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Group 3 */}
+          <div className="space-y-1">
+            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">SETTINGS</h3>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2 w-full text-left text-[#4B5563] hover:bg-gray-50 transition-colors duration-200 rounded-lg text-[13px] font-medium"
+            >
+              <LogOut size={16} className="text-[#9CA3AF]" />
+              <span>Logout</span>
+            </button>
+          </div>
         </nav>
 
-        <div className="p-4 mb-4">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full text-[#0A4F4F] hover:bg-[#0D6E6E]/10 transition-colors duration-200 rounded-full font-sans text-sm"
-          >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
+        <div className="p-4 border-t border-[#EBEBEB]">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="w-8 h-8 rounded-full bg-[#0D6E6E] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+              N
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-medium text-[#111827] truncate">Nhyira</span>
+              <span className="text-[11px] text-[#6B7280] truncate">Admin</span>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 ml-[220px] p-8 overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
           {children}
         </div>
       </main>

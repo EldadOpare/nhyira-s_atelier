@@ -7,68 +7,79 @@ export default function AdminDashboard() {
 
   if (isLoading || !stats) {
     return (
-      <div className="space-y-8">
-        <h1 className="font-heading text-4xl text-[#0A4F4F]">Dashboard</h1>
+      <div className="space-y-8 font-sans">
+        <h1 className="text-2xl font-semibold text-[#111827]">Overview</h1>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-[#F9F5EE] rounded-[1rem]" />)}
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-white rounded-2xl border border-[#EBEBEB]" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
-      <div className="flex justify-between items-end">
-        <h1 className="font-heading text-4xl text-[#0A4F4F]">Overview</h1>
-        <p className="font-sans text-sm text-gray-500">Welcome back, Nhyira</p>
+    <div className="space-y-8 font-sans">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold text-[#111827]">Overview</h1>
+        <p className="text-[13px] text-[#6B7280]">Welcome back, Nhyira</p>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-[#F9F5EE] p-6 border border-[#0D6E6E]/20 rounded-[1rem] flex flex-col justify-between h-32">
-          <p className="font-label text-xs tracking-widest text-[#0D6E6E]">TOTAL ENQUIRIES</p>
-          <p className="font-heading text-4xl text-[#0A4F4F]">{stats.totalEnquiries}</p>
+        <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
+          <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">TOTAL ENQUIRIES</p>
+          <p className="text-3xl font-semibold text-[#111827]">{stats.totalEnquiries}</p>
         </div>
-        <div className="bg-[#F9F5EE] p-6 border border-[#0D6E6E]/20 rounded-[1rem] flex flex-col justify-between h-32">
-          <p className="font-label text-xs tracking-widest text-[#0D6E6E]">NEW ENQUIRIES</p>
-          <p className="font-heading text-4xl text-[#0A4F4F]">{stats.newEnquiries}</p>
+        <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
+          <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">NEW ENQUIRIES</p>
+          <p className="text-3xl font-semibold text-[#111827]">{stats.newEnquiries}</p>
         </div>
-        <div className="bg-[#F9F5EE] p-6 border border-[#0D6E6E]/20 rounded-[1rem] flex flex-col justify-between h-32">
-          <p className="font-label text-xs tracking-widest text-[#0D6E6E]">BOOKED</p>
-          <p className="font-heading text-4xl text-[#0A4F4F]">{stats.bookedEnquiries}</p>
+        <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
+          <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">BOOKED</p>
+          <p className="text-3xl font-semibold text-[#111827]">{stats.bookedEnquiries}</p>
         </div>
-        <div className="bg-[#F9F5EE] p-6 border border-[#0D6E6E]/20 rounded-[1rem] flex flex-col justify-between h-32">
-          <p className="font-label text-xs tracking-widest text-[#0D6E6E]">PORTFOLIO ITEMS</p>
-          <p className="font-heading text-4xl text-[#0A4F4F]">{stats.totalPortfolioItems}</p>
+        <div className="bg-white p-6 border border-[#EBEBEB] rounded-2xl flex flex-col justify-between h-32">
+          <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">PORTFOLIO ITEMS</p>
+          <p className="text-3xl font-semibold text-[#111827]">{stats.totalPortfolioItems}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Enquiries */}
-        <div className="lg:col-span-2 border border-[#0D6E6E]/20 rounded-[1rem] overflow-hidden bg-white">
-          <div className="p-6 border-b border-[#0D6E6E]/10 bg-[#F9F5EE]/50">
-            <h2 className="font-heading text-2xl text-[#0A4F4F]">Recent Enquiries</h2>
+        <div className="lg:col-span-2 border border-[#EBEBEB] rounded-2xl overflow-hidden bg-white">
+          <div className="p-6 border-b border-[#EBEBEB]">
+            <h2 className="text-[15px] font-semibold text-[#111827]">Recent Enquiries</h2>
           </div>
           <div className="p-0">
             {!stats.recentEnquiries?.length ? (
-              <p className="p-6 text-gray-500 font-sans text-sm">No recent enquiries.</p>
+              <p className="p-6 text-[#6B7280] text-[13px]">No recent enquiries.</p>
             ) : (
-              <div className="divide-y divide-[#0D6E6E]/10">
+              <div className="divide-y divide-[#EBEBEB]">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">
+                  <div className="col-span-5">Client</div>
+                  <div className="col-span-4">Service</div>
+                  <div className="col-span-3 text-right">Status</div>
+                </div>
+                
                 {stats.recentEnquiries.map((enq) => (
-                  <div key={enq.id} className="p-4 px-6 flex justify-between items-center hover:bg-[#F9F5EE]/30 transition-colors">
-                    <div>
-                      <p className="font-sans font-medium text-[#0A4F4F]">{enq.name}</p>
-                      <p className="font-sans text-sm text-gray-500">{enq.service}</p>
+                  <div key={enq.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      <p className="text-[13px] font-medium text-[#111827]">{enq.name}</p>
+                      <p className="text-[12px] text-[#6B7280] mt-0.5">{format(new Date(enq.createdAt), "MMM d, yyyy")}</p>
                     </div>
-                    <div className="text-right">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-label tracking-widest ${
-                        enq.status === 'new' ? 'bg-[#0D6E6E]/10 text-[#0D6E6E]' :
-                        enq.status === 'booked' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-600'
+                    <div className="col-span-4">
+                      <p className="text-[13px] text-[#4B5563] truncate">{enq.service}</p>
+                    </div>
+                    <div className="col-span-3 text-right">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-medium ${
+                        enq.status === 'new' ? 'bg-blue-50 text-blue-700' :
+                        enq.status === 'booked' ? 'bg-green-50 text-green-700' :
+                        enq.status === 'replied' ? 'bg-purple-50 text-purple-700' :
+                        enq.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+                        'bg-gray-50 text-gray-500'
                       }`}>
-                        {enq.status.toUpperCase()}
+                        {enq.status.charAt(0).toUpperCase() + enq.status.slice(1)}
                       </span>
-                      <p className="font-sans text-xs text-gray-400 mt-1">{format(new Date(enq.createdAt), "MMM d, yyyy")}</p>
                     </div>
                   </div>
                 ))}
@@ -78,19 +89,19 @@ export default function AdminDashboard() {
         </div>
 
         {/* Enquiries by Service */}
-        <div className="border border-[#0D6E6E]/20 rounded-[1rem] overflow-hidden bg-white">
-          <div className="p-6 border-b border-[#0D6E6E]/10 bg-[#F9F5EE]/50">
-            <h2 className="font-heading text-2xl text-[#0A4F4F]">By Service</h2>
+        <div className="border border-[#EBEBEB] rounded-2xl overflow-hidden bg-white">
+          <div className="p-6 border-b border-[#EBEBEB]">
+            <h2 className="text-[15px] font-semibold text-[#111827]">By Service</h2>
           </div>
           <div className="p-6">
             {!stats.enquiriesByService?.length ? (
-              <p className="text-gray-500 font-sans text-sm">No data available.</p>
+              <p className="text-[#6B7280] text-[13px]">No data available.</p>
             ) : (
               <div className="space-y-4">
                 {stats.enquiriesByService.map((item) => (
                   <div key={item.service} className="flex justify-between items-center">
-                    <span className="font-sans text-sm text-[#0A4F4F]">{item.service}</span>
-                    <span className="font-sans font-medium text-[#0D6E6E]">{item.count}</span>
+                    <span className="text-[13px] text-[#4B5563] truncate pr-4">{item.service}</span>
+                    <span className="text-[13px] font-medium text-[#111827] bg-gray-50 px-2 py-0.5 rounded-md">{item.count}</span>
                   </div>
                 ))}
               </div>

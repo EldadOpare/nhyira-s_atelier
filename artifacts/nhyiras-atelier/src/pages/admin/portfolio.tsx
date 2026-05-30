@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useListPortfolio, useCreatePortfolioItem, useUpdatePortfolioItem, useDeletePortfolioItem, getListPortfolioQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2, X } from "lucide-react";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +27,7 @@ const portfolioSchema = z.object({
 export default function AdminPortfolio() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "published" | "draft">("all");
   
   const queryClient = useQueryClient();
   const { data: items, isLoading } = useListPortfolio();
@@ -115,19 +116,26 @@ export default function AdminPortfolio() {
     }
   };
 
+  const filteredItems = items?.filter(item => {
+    if (activeTab === "all") return true;
+    if (activeTab === "published") return item.published;
+    if (activeTab === "draft") return !item.published;
+    return true;
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       <div className="flex justify-between items-center">
-        <h1 className="font-heading text-4xl text-[#0A4F4F]">Portfolio</h1>
+        <h1 className="text-2xl font-semibold text-[#111827]">Portfolio</h1>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => handleOpenModal()} className="bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-none font-label tracking-widest h-10">
-              <Plus className="mr-2" size={16} /> ADD NEW WORK
+            <Button onClick={() => handleOpenModal()} className="bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-lg text-[13px] font-medium h-9 px-4">
+              <Plus className="mr-2" size={14} /> Add New Work
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-[#F9F5EE] border-[#0D6E6E]/20 p-8 rounded-[1rem]">
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-white border border-[#EBEBEB] p-8 rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="font-heading text-3xl text-[#0A4F4F] mb-6">
+              <DialogTitle className="text-xl font-semibold text-[#111827] mb-6">
                 {editingId ? "Edit Portfolio Item" : "New Portfolio Item"}
               </DialogTitle>
             </DialogHeader>
@@ -137,15 +145,15 @@ export default function AdminPortfolio() {
                 <div className="grid grid-cols-2 gap-6">
                   <FormField control={form.control} name="title" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">TITLE</FormLabel>
-                      <FormControl><Input {...field} className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                      <FormLabel className="text-[12px] font-medium text-[#4B5563]">Title</FormLabel>
+                      <FormControl><Input {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="category" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">CATEGORY</FormLabel>
-                      <FormControl><Input {...field} className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                      <FormLabel className="text-[12px] font-medium text-[#4B5563]">Category</FormLabel>
+                      <FormControl><Input {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -153,8 +161,8 @@ export default function AdminPortfolio() {
                 
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">DESCRIPTION</FormLabel>
-                    <FormControl><Textarea {...field} className="bg-white rounded-none border-[#0D6E6E]/30 min-h-[100px]" /></FormControl>
+                    <FormLabel className="text-[12px] font-medium text-[#4B5563]">Description</FormLabel>
+                    <FormControl><Textarea {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E] min-h-[100px]" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -162,22 +170,22 @@ export default function AdminPortfolio() {
                 <div className="grid grid-cols-2 gap-6">
                   <FormField control={form.control} name="packageDetails" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">PACKAGE DETAILS</FormLabel>
-                      <FormControl><Textarea {...field} className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                      <FormLabel className="text-[12px] font-medium text-[#4B5563]">Package Details</FormLabel>
+                      <FormControl><Textarea {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="estimatedBudget" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">ESTIMATED BUDGET</FormLabel>
-                      <FormControl><Input {...field} className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                      <FormLabel className="text-[12px] font-medium text-[#4B5563]">Estimated Budget</FormLabel>
+                      <FormControl><Input {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
 
                 <div>
-                  <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F] mb-3 block">IMAGES (URL)</FormLabel>
+                  <FormLabel className="text-[12px] font-medium text-[#4B5563] mb-3 block">Images (URLs)</FormLabel>
                   <div className="space-y-3">
                     {fields.map((field, index) => (
                       <div key={field.id} className="flex gap-2">
@@ -186,18 +194,18 @@ export default function AdminPortfolio() {
                           name={`images.${index}.url`}
                           render={({ field }) => (
                             <FormItem className="flex-1">
-                              <FormControl><Input {...field} placeholder="https://..." className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                              <FormControl><Input {...field} placeholder="https://..." className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <Button type="button" variant="outline" size="icon" onClick={() => remove(index)} className="rounded-none border-[#0D6E6E]/30 text-red-500">
+                        <Button type="button" variant="outline" size="icon" onClick={() => remove(index)} className="rounded-lg border-[#EBEBEB] text-red-500 hover:bg-red-50">
                           <Trash2 size={16} />
                         </Button>
                       </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ url: "" })} className="rounded-none border-[#0D6E6E]/30 font-label tracking-widest text-xs">
-                      + ADD IMAGE
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ url: "" })} className="rounded-lg border-[#EBEBEB] text-[12px] font-medium">
+                      + Add Image
                     </Button>
                   </div>
                 </div>
@@ -205,23 +213,23 @@ export default function AdminPortfolio() {
                 <div className="grid grid-cols-2 gap-6 items-end">
                   <FormField control={form.control} name="tags" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F]">TAGS (COMMA SEPARATED)</FormLabel>
-                      <FormControl><Input {...field} className="bg-white rounded-none border-[#0D6E6E]/30" /></FormControl>
+                      <FormLabel className="text-[12px] font-medium text-[#4B5563]">Tags (Comma separated)</FormLabel>
+                      <FormControl><Input {...field} className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E]" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="published" render={({ field }) => (
-                    <FormItem className="flex items-center gap-3 space-y-0 h-10 border border-[#0D6E6E]/30 bg-white px-3">
+                    <FormItem className="flex items-center gap-3 space-y-0 h-10 border border-[#EBEBEB] bg-white px-4 rounded-lg">
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel className="font-label text-xs tracking-widest text-[#0A4F4F] !mt-0">PUBLISHED</FormLabel>
+                      <FormLabel className="text-[13px] font-medium text-[#111827] !mt-0">Published</FormLabel>
                     </FormItem>
                   )} />
                 </div>
 
-                <Button type="submit" disabled={createItem.isPending || updateItem.isPending} className="w-full bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white font-label tracking-widest rounded-none h-12 mt-4">
-                  {createItem.isPending || updateItem.isPending ? "SAVING..." : "SAVE PORTFOLIO ITEM"}
+                <Button type="submit" disabled={createItem.isPending || updateItem.isPending} className="w-full bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-lg font-medium text-[14px] h-11 mt-4">
+                  {createItem.isPending || updateItem.isPending ? "Saving..." : "Save Portfolio Item"}
                 </Button>
               </form>
             </Form>
@@ -229,38 +237,59 @@ export default function AdminPortfolio() {
         </Dialog>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-[#EBEBEB] pb-4">
+        {[
+          { id: "all", label: "All Items" },
+          { id: "published", label: "Published" },
+          { id: "draft", label: "Drafts" }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
+              activeTab === tab.id 
+                ? "bg-[#111827] text-white" 
+                : "text-[#6B7280] hover:bg-gray-100"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1,2,3].map(i => <div key={i} className="h-64 bg-[#F9F5EE] rounded-[1rem] animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i => <div key={i} className="h-[340px] bg-white border border-[#EBEBEB] rounded-2xl animate-pulse" />)}
         </div>
-      ) : !items?.length ? (
-        <div className="text-center py-20 bg-[#F9F5EE] border border-[#0D6E6E]/20 rounded-[1rem]">
-          <p className="font-sans text-gray-500">No portfolio items yet.</p>
+      ) : !filteredItems?.length ? (
+        <div className="text-center py-20 bg-white border border-[#EBEBEB] rounded-2xl">
+          <p className="text-[#6B7280] text-[14px]">No portfolio items found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item: any) => (
-            <div key={item.id} className="border border-[#0D6E6E]/20 rounded-[1rem] overflow-hidden bg-white flex flex-col group">
+          {filteredItems.map((item: any) => (
+            <div key={item.id} className="border border-[#EBEBEB] rounded-2xl overflow-hidden bg-white flex flex-col group">
               <div className="h-48 bg-gray-100 relative overflow-hidden">
-                <img src={item.images[0] || "https://placehold.co/600x400/F9F5EE/0D6E6E"} alt={item.title} className="w-full h-full object-cover" />
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <span className={`px-2 py-1 text-[10px] font-label tracking-widest rounded-full ${item.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {item.published ? 'PUBLISHED' : 'DRAFT'}
+                <img src={item.images[0] || "https://placehold.co/600x400/EBEBEB/9CA3AF"} alt={item.title} className="w-full h-full object-cover" />
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <span className={`px-2.5 py-1 text-[11px] font-medium rounded-full ${item.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {item.published ? 'Published' : 'Draft'}
                   </span>
                 </div>
               </div>
               <div className="p-5 flex-1 flex flex-col">
-                <p className="font-label text-xs tracking-widest text-[#0D6E6E] mb-1">{item.category}</p>
-                <h3 className="font-heading text-2xl text-[#0A4F4F] mb-4">{item.title}</h3>
+                <p className="text-[12px] font-medium text-[#6B7280] mb-1">{item.category}</p>
+                <h3 className="text-[16px] font-semibold text-[#111827] mb-4">{item.title}</h3>
                 
-                <div className="mt-auto flex justify-between items-center pt-4 border-t border-[#0D6E6E]/10">
-                  <span className="font-sans text-xs text-gray-400">{format(new Date(item.createdAt), "MMM d, yyyy")}</span>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleOpenModal(item)}>
-                      <Edit2 size={14} className="text-[#0D6E6E]" />
+                <div className="mt-auto flex justify-between items-center pt-4 border-t border-[#EBEBEB]">
+                  <span className="text-[12px] text-[#9CA3AF]">{format(new Date(item.createdAt), "MMM d, yyyy")}</span>
+                  <div className="flex gap-1.5">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-gray-50 hover:bg-gray-100 text-[#4B5563]" onClick={() => handleOpenModal(item)}>
+                      <Edit2 size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-red-50" onClick={() => handleDelete(item.id)}>
-                      <Trash2 size={14} className="text-red-500" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600" onClick={() => handleDelete(item.id)}>
+                      <Trash2 size={14} />
                     </Button>
                   </div>
                 </div>
