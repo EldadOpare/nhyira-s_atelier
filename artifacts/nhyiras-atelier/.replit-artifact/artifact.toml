@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Nhyira's Atelier"
+version = "1.0.0"
+id = "artifacts/nhyiras-atelier"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25885
+
+[services.development]
+run = "pnpm --filter @workspace/nhyiras-atelier run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nhyiras-atelier", "run", "build" ]
+publicDir = "artifacts/nhyiras-atelier/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25885"
+BASE_PATH = "/"
