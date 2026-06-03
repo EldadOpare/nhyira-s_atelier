@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListEnquiries, useUpdateEnquiry, useDeleteEnquiry, getListEnquiriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { useAdminPage } from "@/lib/admin-page-context";
 
 const statuses = ["new", "read", "replied", "booked", "archived"];
 
@@ -15,7 +16,7 @@ const statusStyles: Record<string, string> = {
   read:     "bg-[#F5F5F5] text-[#6B7280]",
   replied:  "bg-purple-50 text-purple-600",
   booked:   "bg-emerald-50 text-emerald-600",
-  archived: "bg-[#F5F5F5] text-[#B0B0B0]",
+  archived: "bg-[#F5F5F5] text-[#AFAFAF]",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -35,6 +36,11 @@ export default function AdminEnquiries() {
   const { data: enquiries, isLoading } = useListEnquiries();
   const updateEnquiry = useUpdateEnquiry();
   const deleteEnquiry = useDeleteEnquiry();
+  const { setHeader } = useAdminPage();
+
+  useEffect(() => {
+    setHeader({ title: "Enquiries", subtitle: "Review and manage client requests" });
+  }, [setHeader]);
 
   const filteredEnquiries = enquiries?.filter(e => activeTab === "all" || e.status === activeTab) || [];
 
@@ -64,22 +70,14 @@ export default function AdminEnquiries() {
     });
   };
 
-  const allTabs = ["all", ...statuses];
-
   return (
-    <div className="space-y-7 font-sans">
-      {/* Header */}
-      <div>
-        <h1 className="text-[22px] font-medium text-[#111827] tracking-tight">Enquiries</h1>
-        <p className="text-[13px] text-[#9CA3AF] mt-0.5">Review and manage client requests</p>
-      </div>
-
+    <div className="space-y-6 font-sans">
       {/* Filter tabs */}
       <div className="flex gap-1.5 flex-wrap">
-        {allTabs.map(status => (
+        {["all", ...statuses].map(status => (
           <button key={status} onClick={() => setActiveTab(status)}
             className={`px-4 py-1.5 rounded-lg text-[12px] font-medium transition-colors capitalize ${
-              activeTab === status ? "bg-[#111827] text-white" : "text-[#9CA3AF] hover:bg-white hover:text-[#4B5563]"
+              activeTab === status ? "bg-[#111827] text-white" : "text-[#AFAFAF] hover:bg-white hover:text-[#4B5563]"
             }`}>
             {status}
           </button>
@@ -93,11 +91,10 @@ export default function AdminEnquiries() {
             {[1, 2, 3, 4].map(i => <div key={i} className="h-12 bg-[#F8F8F8] rounded-lg animate-pulse" />)}
           </div>
         ) : !filteredEnquiries.length ? (
-          <div className="p-14 text-center text-[#B0B0B0] text-[13px]">No enquiries found.</div>
+          <div className="p-14 text-center text-[#BEBEBE] text-[13px]">No enquiries found.</div>
         ) : (
-          <div className="divide-y divide-[#F2F2F2]">
-            {/* Column headers */}
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider">
+          <div className="divide-y divide-[#F5F5F5]">
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 text-[10px] font-medium text-[#CECECE] uppercase tracking-wider">
               <div className="col-span-3">Name</div>
               <div className="col-span-3">Service</div>
               <div className="col-span-2">Received</div>
@@ -109,8 +106,8 @@ export default function AdminEnquiries() {
                 className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#FAFAFA] transition-colors cursor-pointer">
                 <div className="col-span-3 text-[13px] font-medium text-[#111827] truncate">{enq.name}</div>
                 <div className="col-span-3 text-[13px] text-[#6B7280] truncate">{enq.service}</div>
-                <div className="col-span-2 text-[12px] text-[#B0B0B0]">{format(new Date(enq.createdAt), "MMM d, yyyy")}</div>
-                <div className="col-span-2 text-[12px] text-[#B0B0B0]">{enq.eventDate ? format(new Date(enq.eventDate), "MMM d, yyyy") : "—"}</div>
+                <div className="col-span-2 text-[12px] text-[#BEBEBE]">{format(new Date(enq.createdAt), "MMM d, yyyy")}</div>
+                <div className="col-span-2 text-[12px] text-[#BEBEBE]">{enq.eventDate ? format(new Date(enq.eventDate), "MMM d, yyyy") : "—"}</div>
                 <div className="col-span-2 text-right"><StatusBadge status={enq.status} /></div>
               </div>
             ))}
@@ -123,45 +120,42 @@ export default function AdminEnquiries() {
         <SheetContent className="sm:max-w-[420px] bg-white border-l border-[#EBEBEB] p-0 flex flex-col font-sans">
           {selectedEnquiry && (
             <>
-              <SheetHeader className="px-6 pt-6 pb-5 border-b border-[#EBEBEB]">
+              <SheetHeader className="px-6 pt-6 pb-5 border-b border-[#F0F0F0]">
                 <div className="flex justify-between items-center mb-3">
                   <StatusBadge status={selectedEnquiry.status} />
-                  <span className="text-[11px] text-[#C4C4C4]">{format(new Date(selectedEnquiry.createdAt), "MMM d, yyyy · h:mm a")}</span>
+                  <span className="text-[11px] text-[#CECECE]">{format(new Date(selectedEnquiry.createdAt), "MMM d, yyyy · h:mm a")}</span>
                 </div>
                 <SheetTitle className="text-[18px] font-medium text-[#111827] leading-tight">{selectedEnquiry.name}</SheetTitle>
-                <SheetDescription className="text-[13px] text-[#9CA3AF] mt-0.5">
+                <SheetDescription className="text-[13px] text-[#AFAFAF] mt-0.5">
                   Interested in: <span className="font-medium text-[#4B5563]">{selectedEnquiry.service}</span>
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
-                {/* Contact info */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4 bg-[#F8F8F8] p-4 rounded-xl border border-[#F2F2F2]">
                   <div>
-                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Email</p>
+                    <p className="text-[10px] font-medium text-[#CECECE] uppercase tracking-wider mb-1">Email</p>
                     <p className="text-[13px] text-[#111827] break-all">{selectedEnquiry.email}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Phone</p>
+                    <p className="text-[10px] font-medium text-[#CECECE] uppercase tracking-wider mb-1">Phone</p>
                     <p className="text-[13px] text-[#111827]">{selectedEnquiry.phone || "—"}</p>
                   </div>
                   <div className="col-span-2 pt-3 border-t border-[#EBEBEB]">
-                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Event Date</p>
+                    <p className="text-[10px] font-medium text-[#CECECE] uppercase tracking-wider mb-1">Event Date</p>
                     <p className="text-[13px] text-[#111827]">{selectedEnquiry.eventDate ? format(new Date(selectedEnquiry.eventDate), "MMMM d, yyyy") : "—"}</p>
                   </div>
                 </div>
 
-                {/* Message */}
                 <div>
-                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Message</p>
+                  <p className="text-[11px] font-medium text-[#AFAFAF] uppercase tracking-wider mb-2">Message</p>
                   <div className="bg-white border border-[#EBEBEB] rounded-xl p-4 text-[13px] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
                     {selectedEnquiry.message}
                   </div>
                 </div>
 
-                {/* Update Status */}
                 <div>
-                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Update Status</p>
+                  <p className="text-[11px] font-medium text-[#AFAFAF] uppercase tracking-wider mb-2">Update Status</p>
                   <Select value={selectedEnquiry.status} onValueChange={handleStatusChange}>
                     <SelectTrigger className="bg-white rounded-lg border-[#EBEBEB] h-9 focus:ring-[#0D6E6E]">
                       <SelectValue />
@@ -172,9 +166,8 @@ export default function AdminEnquiries() {
                   </Select>
                 </div>
 
-                {/* Notes */}
                 <div>
-                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Internal Notes</p>
+                  <p className="text-[11px] font-medium text-[#AFAFAF] uppercase tracking-wider mb-2">Internal Notes</p>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -188,9 +181,9 @@ export default function AdminEnquiries() {
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-[#EBEBEB]">
+              <div className="px-6 py-4 border-t border-[#F0F0F0]">
                 <Button variant="ghost" onClick={handleDelete}
-                  className="w-full text-[#C4C4C4] hover:text-red-500 hover:bg-red-50 rounded-lg h-9 text-[13px]">
+                  className="w-full text-[#CECECE] hover:text-red-500 hover:bg-red-50 rounded-lg h-9 text-[13px]">
                   <Trash2 size={14} className="mr-2" /> Delete Enquiry
                 </Button>
               </div>
