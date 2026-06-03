@@ -10,11 +10,27 @@ import { Trash2 } from "lucide-react";
 
 const statuses = ["new", "read", "replied", "booked", "archived"];
 
+const statusStyles: Record<string, string> = {
+  new:      "bg-blue-50 text-blue-600",
+  read:     "bg-[#F5F5F5] text-[#6B7280]",
+  replied:  "bg-purple-50 text-purple-600",
+  booked:   "bg-emerald-50 text-emerald-600",
+  archived: "bg-[#F5F5F5] text-[#B0B0B0]",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-medium capitalize ${statusStyles[status] ?? "bg-[#F5F5F5] text-[#9CA3AF]"}`}>
+      {status}
+    </span>
+  );
+}
+
 export default function AdminEnquiries() {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedEnquiry, setSelectedEnquiry] = useState<any>(null);
   const [notes, setNotes] = useState("");
-  
+
   const queryClient = useQueryClient();
   const { data: enquiries, isLoading } = useListEnquiries();
   const updateEnquiry = useUpdateEnquiry();
@@ -30,176 +46,152 @@ export default function AdminEnquiries() {
   const handleStatusChange = (status: any) => {
     if (!selectedEnquiry) return;
     updateEnquiry.mutate({ id: selectedEnquiry.id, data: { status } }, {
-      onSuccess: (updated) => {
-        setSelectedEnquiry(updated);
-        queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() });
-      }
+      onSuccess: (updated) => { setSelectedEnquiry(updated); queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() }); }
     });
   };
 
   const handleSaveNotes = () => {
     if (!selectedEnquiry) return;
     updateEnquiry.mutate({ id: selectedEnquiry.id, data: { notes } }, {
-      onSuccess: (updated) => {
-        setSelectedEnquiry(updated);
-        queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() });
-      }
+      onSuccess: (updated) => { setSelectedEnquiry(updated); queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() }); }
     });
   };
 
   const handleDelete = () => {
-    if (!selectedEnquiry || !confirm("Are you sure you want to delete this enquiry?")) return;
+    if (!selectedEnquiry || !confirm("Delete this enquiry?")) return;
     deleteEnquiry.mutate({ id: selectedEnquiry.id }, {
-      onSuccess: () => {
-        setSelectedEnquiry(null);
-        queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() });
-      }
+      onSuccess: () => { setSelectedEnquiry(null); queryClient.invalidateQueries({ queryKey: getListEnquiriesQueryKey() }); }
     });
   };
 
-  const statusColors: Record<string, string> = {
-    new: "bg-blue-50 text-blue-700",
-    read: "bg-gray-100 text-gray-700",
-    replied: "bg-purple-50 text-purple-700",
-    booked: "bg-green-50 text-green-700",
-    archived: "bg-gray-50 text-gray-500"
-  };
+  const allTabs = ["all", ...statuses];
 
   return (
-    <div className="space-y-8 font-sans">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-medium text-[#111827]">Enquiries</h1>
+    <div className="space-y-7 font-sans">
+      {/* Header */}
+      <div>
+        <h1 className="text-[22px] font-medium text-[#111827] tracking-tight">Enquiries</h1>
+        <p className="text-[13px] text-[#9CA3AF] mt-0.5">Review and manage client requests</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-[#EBEBEB] pb-4 overflow-x-auto">
-        {["all", ...statuses].map(status => (
-          <button
-            key={status}
-            onClick={() => setActiveTab(status)}
-            className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors whitespace-nowrap capitalize ${
-              activeTab === status 
-                ? "bg-[#111827] text-white" 
-                : "text-[#6B7280] hover:bg-gray-100"
-            }`}
-          >
+      {/* Filter tabs */}
+      <div className="flex gap-1.5 flex-wrap">
+        {allTabs.map(status => (
+          <button key={status} onClick={() => setActiveTab(status)}
+            className={`px-4 py-1.5 rounded-lg text-[12px] font-medium transition-colors capitalize ${
+              activeTab === status ? "bg-[#111827] text-white" : "text-[#9CA3AF] hover:bg-white hover:text-[#4B5563]"
+            }`}>
             {status}
           </button>
         ))}
       </div>
 
-      <div className="bg-white border border-[#EBEBEB] rounded-2xl overflow-hidden">
+      {/* Table */}
+      <div className="bg-white border border-[#EBEBEB] rounded-xl overflow-hidden">
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-14 bg-gray-50 rounded-lg animate-pulse" />)}
+          <div className="p-8 space-y-3">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-12 bg-[#F8F8F8] rounded-lg animate-pulse" />)}
           </div>
         ) : !filteredEnquiries.length ? (
-          <div className="p-12 text-center text-[#6B7280] text-[14px]">
-            No enquiries found.
-          </div>
+          <div className="p-14 text-center text-[#B0B0B0] text-[13px]">No enquiries found.</div>
         ) : (
-          <div className="divide-y divide-[#EBEBEB]">
-            <div className="grid grid-cols-12 gap-4 p-4 px-6 bg-gray-50 text-[11px] font-medium text-[#6B7280] uppercase tracking-wider">
+          <div className="divide-y divide-[#F2F2F2]">
+            {/* Column headers */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider">
               <div className="col-span-3">Name</div>
               <div className="col-span-3">Service</div>
-              <div className="col-span-2">Date Received</div>
+              <div className="col-span-2">Received</div>
               <div className="col-span-2">Event Date</div>
               <div className="col-span-2 text-right">Status</div>
             </div>
             {filteredEnquiries.map((enq) => (
-              <div 
-                key={enq.id} 
-                onClick={() => handleOpenPanel(enq)}
-                className="grid grid-cols-12 gap-4 p-4 px-6 items-center hover:bg-gray-50 transition-colors cursor-pointer"
-              >
+              <div key={enq.id} onClick={() => handleOpenPanel(enq)}
+                className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#FAFAFA] transition-colors cursor-pointer">
                 <div className="col-span-3 text-[13px] font-medium text-[#111827] truncate">{enq.name}</div>
-                <div className="col-span-3 text-[13px] text-[#4B5563] truncate">{enq.service}</div>
-                <div className="col-span-2 text-[12px] text-[#6B7280]">{format(new Date(enq.createdAt), "MMM d, yyyy")}</div>
-                <div className="col-span-2 text-[12px] text-[#6B7280]">{enq.eventDate ? format(new Date(enq.eventDate), "MMM d, yyyy") : '-'}</div>
-                <div className="col-span-2 text-right">
-                  <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${statusColors[enq.status]}`}>
-                    {enq.status}
-                  </span>
-                </div>
+                <div className="col-span-3 text-[13px] text-[#6B7280] truncate">{enq.service}</div>
+                <div className="col-span-2 text-[12px] text-[#B0B0B0]">{format(new Date(enq.createdAt), "MMM d, yyyy")}</div>
+                <div className="col-span-2 text-[12px] text-[#B0B0B0]">{enq.eventDate ? format(new Date(enq.eventDate), "MMM d, yyyy") : "—"}</div>
+                <div className="col-span-2 text-right"><StatusBadge status={enq.status} /></div>
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {/* Side panel */}
       <Sheet open={!!selectedEnquiry} onOpenChange={(open) => !open && setSelectedEnquiry(null)}>
-        <SheetContent className="sm:max-w-md bg-white border-l-[#EBEBEB] p-0 flex flex-col h-full font-sans">
+        <SheetContent className="sm:max-w-[420px] bg-white border-l border-[#EBEBEB] p-0 flex flex-col font-sans">
           {selectedEnquiry && (
             <>
-              <SheetHeader className="p-6 border-b border-[#EBEBEB] bg-white">
-                <div className="flex justify-between items-start mb-4">
-                  <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${statusColors[selectedEnquiry.status]}`}>
-                    {selectedEnquiry.status}
-                  </span>
-                  <span className="text-[12px] text-[#9CA3AF]">
-                    {format(new Date(selectedEnquiry.createdAt), "MMM d, yyyy h:mm a")}
-                  </span>
+              <SheetHeader className="px-6 pt-6 pb-5 border-b border-[#EBEBEB]">
+                <div className="flex justify-between items-center mb-3">
+                  <StatusBadge status={selectedEnquiry.status} />
+                  <span className="text-[11px] text-[#C4C4C4]">{format(new Date(selectedEnquiry.createdAt), "MMM d, yyyy · h:mm a")}</span>
                 </div>
-                <SheetTitle className="text-xl font-medium text-[#111827]">{selectedEnquiry.name}</SheetTitle>
-                <SheetDescription className="text-[13px] text-[#4B5563] mt-1">
-                  Interested in: <strong className="font-medium text-[#111827]">{selectedEnquiry.service}</strong>
+                <SheetTitle className="text-[18px] font-medium text-[#111827] leading-tight">{selectedEnquiry.name}</SheetTitle>
+                <SheetDescription className="text-[13px] text-[#9CA3AF] mt-0.5">
+                  Interested in: <span className="font-medium text-[#4B5563]">{selectedEnquiry.service}</span>
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-[#EBEBEB]">
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
+                {/* Contact info */}
+                <div className="grid grid-cols-2 gap-4 bg-[#F8F8F8] p-4 rounded-xl border border-[#F2F2F2]">
                   <div>
-                    <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Email</p>
+                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Email</p>
                     <p className="text-[13px] text-[#111827] break-all">{selectedEnquiry.email}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Phone</p>
-                    <p className="text-[13px] text-[#111827]">{selectedEnquiry.phone || '-'}</p>
+                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Phone</p>
+                    <p className="text-[13px] text-[#111827]">{selectedEnquiry.phone || "—"}</p>
                   </div>
-                  <div className="col-span-2 pt-4 border-t border-[#EBEBEB]">
-                    <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Event Date</p>
-                    <p className="text-[13px] text-[#111827]">{selectedEnquiry.eventDate ? format(new Date(selectedEnquiry.eventDate), "MMMM d, yyyy") : '-'}</p>
+                  <div className="col-span-2 pt-3 border-t border-[#EBEBEB]">
+                    <p className="text-[10px] font-medium text-[#C4C4C4] uppercase tracking-wider mb-1">Event Date</p>
+                    <p className="text-[13px] text-[#111827]">{selectedEnquiry.eventDate ? format(new Date(selectedEnquiry.eventDate), "MMMM d, yyyy") : "—"}</p>
                   </div>
                 </div>
 
+                {/* Message */}
                 <div>
-                  <p className="text-[12px] font-medium text-[#111827] mb-2">Message</p>
-                  <div className="bg-white p-4 border border-[#EBEBEB] rounded-xl text-[14px] text-[#4B5563] whitespace-pre-wrap leading-relaxed shadow-sm">
+                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Message</p>
+                  <div className="bg-white border border-[#EBEBEB] rounded-xl p-4 text-[13px] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
                     {selectedEnquiry.message}
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-[#EBEBEB]">
-                  <p className="text-[12px] font-medium text-[#111827] mb-3">Update Status</p>
+                {/* Update Status */}
+                <div>
+                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Update Status</p>
                   <Select value={selectedEnquiry.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="bg-white rounded-lg border-[#EBEBEB] h-10 shadow-sm focus:ring-[#0D6E6E]">
+                    <SelectTrigger className="bg-white rounded-lg border-[#EBEBEB] h-9 focus:ring-[#0D6E6E]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white rounded-lg border-[#EBEBEB]">
-                      {statuses.map(s => (
-                        <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
-                      ))}
+                      {statuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Notes */}
                 <div>
-                  <p className="text-[12px] font-medium text-[#111827] mb-3">Internal Notes</p>
-                  <Textarea 
+                  <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">Internal Notes</p>
+                  <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add private notes here..."
-                    className="bg-white rounded-lg border-[#EBEBEB] min-h-[120px] mb-3 shadow-sm focus-visible:ring-[#0D6E6E]"
+                    placeholder="Add private notes…"
+                    className="bg-white rounded-lg border-[#EBEBEB] min-h-[100px] mb-2.5 focus-visible:ring-[#0D6E6E] text-[13px]"
                   />
-                  <Button onClick={handleSaveNotes} disabled={updateEnquiry.isPending} className="w-full bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-lg font-medium text-[13px] h-10">
+                  <Button onClick={handleSaveNotes} disabled={updateEnquiry.isPending}
+                    className="w-full bg-[#0D6E6E] hover:bg-[#0A4F4F] text-white rounded-lg font-medium text-[13px] h-9">
                     Save Notes
                   </Button>
                 </div>
               </div>
 
-              <div className="p-4 border-t border-[#EBEBEB] bg-gray-50 mt-auto">
-                <Button variant="ghost" onClick={handleDelete} className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg h-10">
-                  <Trash2 size={16} className="mr-2" /> Delete Enquiry
+              <div className="px-6 py-4 border-t border-[#EBEBEB]">
+                <Button variant="ghost" onClick={handleDelete}
+                  className="w-full text-[#C4C4C4] hover:text-red-500 hover:bg-red-50 rounded-lg h-9 text-[13px]">
+                  <Trash2 size={14} className="mr-2" /> Delete Enquiry
                 </Button>
               </div>
             </>

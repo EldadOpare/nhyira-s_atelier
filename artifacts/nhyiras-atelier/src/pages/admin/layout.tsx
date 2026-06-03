@@ -15,7 +15,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [session, isLoading, isError, setLocation]);
 
   if (isLoading) {
-    return <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#E6E6E6] flex items-center justify-center">
+        <span className="text-[13px] text-[#9CA3AF] font-sans tracking-wide">Loading…</span>
+      </div>
+    );
   }
 
   if (!session?.authenticated) {
@@ -28,78 +32,88 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   };
 
+  const navItem = (href: string, icon: React.ReactNode, label: string) => {
+    const active = location === href;
+    return (
+      <Link href={href}>
+        <div className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg cursor-pointer transition-colors duration-150 text-[13px] ${
+          active
+            ? "bg-[#F0FAFA] text-[#0D6E6E] font-medium"
+            : "text-[#6B7280] hover:bg-[#F5F5F5] font-normal"
+        }`}>
+          <span className={active ? "text-[#0D6E6E]" : "text-[#B0B0B0]"}>{icon}</span>
+          {label}
+        </div>
+      </Link>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-[#F7F7F7] flex font-sans">
-      {/* Sidebar */}
-      <aside className="fixed top-0 left-0 w-[220px] h-[100vh] bg-[#FFFFFF] flex flex-col border-r border-[#E5E5E5] shrink-0">
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex flex-col items-start gap-0">
-            <span className="font-brand text-3xl text-[#C9A84C] leading-tight">Nhyira's</span>
-            <span className="font-label text-[9px] tracking-[0.25em] text-[#0A4F4F] uppercase mt-0.5">ATELIER</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#E6E6E6] p-3 flex font-sans">
+      {/* Floating card */}
+      <div className="flex-1 rounded-2xl overflow-hidden flex bg-white min-h-0" style={{ minHeight: "calc(100vh - 24px)" }}>
 
-        <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
-          {/* Group 1 */}
-          <div className="space-y-1">
-            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">OVERVIEW</h3>
-            <Link href="/admin/dashboard">
-              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/dashboard" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
-                <LayoutDashboard size={16} className={location === "/admin/dashboard" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
-                <span>Dashboard</span>
-              </div>
-            </Link>
-          </div>
+        {/* ── Sidebar ── */}
+        <aside className="w-[210px] shrink-0 flex flex-col bg-white border-r border-[#EBEBEB]">
 
-          {/* Group 2 */}
-          <div className="space-y-1">
-            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">MANAGE</h3>
-            <Link href="/admin/portfolio">
-              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/portfolio" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
-                <ImageIcon size={16} className={location === "/admin/portfolio" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
-                <span>Portfolio</span>
-              </div>
-            </Link>
-            <Link href="/admin/enquiries">
-              <div className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-200 rounded-lg text-[13px] font-medium ${location === "/admin/enquiries" ? "bg-[#F0FAFA] text-[#0D6E6E]" : "text-[#4B5563] hover:bg-gray-50"}`}>
-                <MessageSquare size={16} className={location === "/admin/enquiries" ? "text-[#0D6E6E]" : "text-[#9CA3AF]"} />
-                <span>Enquiries</span>
-              </div>
-            </Link>
-          </div>
-
-          {/* Group 3 */}
-          <div className="space-y-1">
-            <h3 className="px-3 mb-2 text-[10px] font-medium tracking-widest text-[#9CA3AF] uppercase">SETTINGS</h3>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2 w-full text-left text-[#4B5563] hover:bg-gray-50 transition-colors duration-200 rounded-lg text-[13px] font-medium"
-            >
-              <LogOut size={16} className="text-[#9CA3AF]" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </nav>
-
-        <div className="p-4 border-t border-[#EBEBEB]">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-[#0D6E6E] text-white flex items-center justify-center text-xs font-medium shrink-0">
-              N
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[13px] font-medium text-[#111827] truncate">Nhyira</span>
-              <span className="text-[11px] text-[#6B7280] truncate">Admin</span>
+          {/* Brand */}
+          <div className="px-5 pt-5 pb-4">
+            <div className="flex flex-col items-start gap-0">
+              <span className="font-brand text-[28px] text-[#C9A84C] leading-tight">Nhyira's</span>
+              <span className="font-label text-[8px] tracking-[0.28em] text-[#0A4F4F] uppercase mt-0.5">ATELIER</span>
             </div>
           </div>
-        </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-[220px] p-8 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
-          {children}
-        </div>
-      </main>
+          {/* Nav */}
+          <nav className="flex-1 px-3 pt-2 space-y-5 overflow-y-auto">
+            <div className="space-y-0.5">
+              <p className="px-3 py-1 text-[10px] font-medium tracking-widest text-[#C4C4C4] uppercase">Overview</p>
+              {navItem("/admin/dashboard", <LayoutDashboard size={14} />, "Dashboard")}
+            </div>
+
+            <div className="space-y-0.5">
+              <p className="px-3 py-1 text-[10px] font-medium tracking-widest text-[#C4C4C4] uppercase">Manage</p>
+              {navItem("/admin/portfolio", <ImageIcon size={14} />, "Portfolio")}
+              {navItem("/admin/enquiries", <MessageSquare size={14} />, "Enquiries")}
+            </div>
+
+            <div className="space-y-0.5">
+              <p className="px-3 py-1 text-[10px] font-medium tracking-widest text-[#C4C4C4] uppercase">Settings</p>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2.5 px-3 py-[7px] w-full text-left text-[#6B7280] hover:bg-[#F5F5F5] transition-colors duration-150 rounded-lg text-[13px] font-normal"
+              >
+                <LogOut size={14} className="text-[#B0B0B0]" />
+                Logout
+              </button>
+            </div>
+          </nav>
+
+          {/* User card */}
+          <div className="p-3 border-t border-[#EBEBEB]">
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[#F5F5F5] transition-colors cursor-default">
+              <div className="w-8 h-8 rounded-full bg-[#0D6E6E] text-white flex items-center justify-center text-[12px] font-medium shrink-0 font-sans">
+                N
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[13px] font-medium text-[#111827] truncate leading-tight">Nhyira</span>
+                <span className="text-[11px] text-[#9CA3AF] truncate leading-tight">nhyiras_atelier</span>
+              </div>
+              <span className="shrink-0 text-[9px] font-medium tracking-wide text-[#0D6E6E] bg-[#EDF7F7] px-2 py-0.5 rounded-full uppercase">
+                Studio
+              </span>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── Main ── */}
+        <main className="flex-1 overflow-y-auto bg-[#F8F8F8]">
+          <div className="max-w-5xl mx-auto p-8">
+            {children}
+          </div>
+        </main>
+
+      </div>
     </div>
   );
 }
