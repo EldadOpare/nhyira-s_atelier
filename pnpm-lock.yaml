@@ -75,6 +75,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.2
       prettier:
         specifier: ^3.8.3
         version: 3.8.4
