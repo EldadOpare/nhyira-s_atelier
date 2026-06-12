@@ -1,0 +1,17 @@
+{
+  "buildCommand": "pnpm --filter @workspace/nhyiras-atelier run build",
+  "outputDirectory": "apps/web/dist/public",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "functions": {
+    "api/[...path].ts": {
+      "includeFiles": "apps/api/src/**,packages/db/src/**,packages/db/dist/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/.*)?$).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
