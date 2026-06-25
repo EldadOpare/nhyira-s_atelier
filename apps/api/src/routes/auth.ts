@@ -3,11 +3,7 @@ import { supabase } from "../lib/supabase";
 
 const router = Router();
 
-/**
- * GET /api/auth/me
- * Returns the authenticated user's info if the Bearer token is valid.
- * The frontend calls this on load to check if the user is still signed in.
- */
+// The app called this on load to find out if the user was still signed in.
 router.get("/me", async (req, res) => {
   const authHeader = req.headers.authorization;
 

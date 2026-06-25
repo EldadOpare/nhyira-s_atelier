@@ -2,29 +2,43 @@ import { Router } from "express";
 import { db, portfolioTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { CreatePortfolioItemBody, UpdatePortfolioItemBody, UpdatePortfolioItemParams, GetPortfolioItemParams, DeletePortfolioItemParams, ListPortfolioQueryParams } from "@workspace/api-zod";
-import { requireAdmin } from "../middlewares/require-admin";
+import { requireAdmin, getAdminUser } from "../middlewares/require-admin";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
   const parsed = ListPortfolioQueryParams.safeParse(req.query);
+  const isAdmin = (await getAdminUser(req)) !== null;
+
   const items = await db
     .select()
     .from(portfolioTable)
     .orderBy(desc(portfolioTable.createdAt));
 
+  // The public only ever saw published work. Drafts stayed admin-only.
+  let visible = isAdmin ? items : items.filter((i) => i.published);
+
   if (parsed.success && parsed.data.published !== undefined) {
-    const filtered = items.filter((i) => i.published === parsed.data.published);
-    res.json(filtered.map(formatItem));
-    return;
+    visible = visible.filter((i) => i.published === parsed.data.published);
   }
-  res.json(items.map(formatItem));
+
+  res.json(visible.map(formatItem));
 });
+
+// An image had to be an http(s) link so a draft could never smuggle in a
+// "javascript:" or oversized "data:" URL that later rendered in an <img>.
+function imagesAreSafe(images?: string[]) {
+  return (images ?? []).every((u) => /^https?:\/\//i.test(u) && u.length <= 2048);
+}
 
 router.post("/", requireAdmin, async (req, res) => {
   const parsed = CreatePortfolioItemBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request", details: parsed.error });
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  if (!imagesAreSafe(parsed.data.images)) {
+    res.status(400).json({ error: "Images must be valid http(s) URLs" });
     return;
   }
   const { title, category, description, packageDetails, estimatedBudget, images, tags, published } = parsed.data;
@@ -55,6 +69,13 @@ router.get("/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+
+  // A draft only showed itself to an admin. Everyone else got a 404.
+  if (!item.published && (await getAdminUser(req)) === null) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
   res.json(formatItem(item));
 });
 
@@ -67,6 +88,10 @@ router.put("/:id", requireAdmin, async (req, res) => {
   const bodyParsed = UpdatePortfolioItemBody.safeParse(req.body);
   if (!bodyParsed.success) {
     res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  if (bodyParsed.data.images !== undefined && !imagesAreSafe(bodyParsed.data.images)) {
+    res.status(400).json({ error: "Images must be valid http(s) URLs" });
     return;
   }
   const updates: Record<string, unknown> = {};

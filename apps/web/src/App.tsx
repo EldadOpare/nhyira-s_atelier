@@ -11,6 +11,7 @@ import AdminLayout from "./pages/admin/layout";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminPortfolio from "./pages/admin/portfolio";
 import AdminEnquiries from "./pages/admin/enquiries";
+import AdminCategories from "./pages/admin/categories";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,9 @@ function Router() {
       </Route>
       <Route path="/admin/enquiries">
         <AdminLayout><AdminEnquiries /></AdminLayout>
+      </Route>
+      <Route path="/admin/categories">
+        <AdminLayout><AdminCategories /></AdminLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>

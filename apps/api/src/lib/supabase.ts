@@ -9,11 +9,8 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   );
 }
 
-/**
- * Server-side Supabase client with the service role key.
- * Used to verify JWTs from incoming requests via supabase.auth.getUser(token).
- * Never expose this key to the browser.
- */
+// This client used the service role key, so it stayed on the server only and
+// never went to the browser. We used it to check the tokens that came in.
 export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,

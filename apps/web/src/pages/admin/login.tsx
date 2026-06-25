@@ -175,7 +175,7 @@ export default function AdminLogin() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-xl h-12 transition-colors"
+                  className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-[10px] h-12 transition-colors"
                 >
                   {isLoading ? "SIGNING IN…" : "SIGN IN"}
                 </Button>

@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load root .env when running drizzle-kit directly (it doesn't pick up .env automatically)
+// drizzle-kit did not read .env on its own, so we loaded the root one by hand.
 if (!process.env.DATABASE_URL) {
   try {
     const lines = readFileSync(path.resolve(__dirname, "../../.env"), "utf-8").split("\n");

@@ -2,12 +2,11 @@ import { supabase } from "./supabase";
 
 const BUCKET = "portfolio";
 
-/**
- * Uploads an image file to the Supabase Storage `portfolio` bucket and
- * returns its public URL. The admin must be signed in (an authenticated
- * Supabase session is required by the bucket's insert policy).
- */
+// Sent one image to the portfolio storage bucket and handed back its public
+// URL. The admin had to be signed in because the bucket only allowed uploads
+// from a logged-in user.
 export async function uploadPortfolioImage(file: File): Promise<string> {
+  // Gave each file a random name so two uploads never clashed.
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const path = `${crypto.randomUUID()}.${ext}`;
 

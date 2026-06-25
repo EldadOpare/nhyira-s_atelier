@@ -11,13 +11,30 @@ router.get("/", requireAdmin, async (req, res) => {
   res.json(items.map(formatEnquiry));
 });
 
+// This came from the public contact form, so the lengths were capped to stop
+// anyone stuffing the database with huge values.
+const LIMITS = { name: 120, email: 200, phone: 40, service: 120, eventDate: 40, message: 5000 };
+
 router.post("/", async (req, res) => {
   const parsed = SubmitEnquiryBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request", details: parsed.error });
+    res.status(400).json({ error: "Invalid request" });
     return;
   }
   const { name, email, phone, service, eventDate, message } = parsed.data;
+
+  const tooLong =
+    name.length > LIMITS.name ||
+    email.length > LIMITS.email ||
+    (phone?.length ?? 0) > LIMITS.phone ||
+    service.length > LIMITS.service ||
+    (eventDate?.length ?? 0) > LIMITS.eventDate ||
+    message.length > LIMITS.message;
+  if (tooLong) {
+    res.status(400).json({ error: "One or more fields are too long" });
+    return;
+  }
+
   const [item] = await db
     .insert(enquiriesTable)
     .values({

@@ -1,17 +1,14 @@
--- ───────────────────────────────────────────────────────────────────────────
--- Supabase Storage setup for portfolio image uploads
--- Run this ONCE in the Supabase Dashboard → SQL Editor.
--- ───────────────────────────────────────────────────────────────────────────
+-- Storage setup for portfolio image uploads.
+-- We ran this once in the Supabase SQL editor.
 
--- 1. Create a public bucket named "portfolio" (idempotent).
---    public = true  → images are readable by anyone via their public URL,
---    which is what the user-facing site needs.
+-- Made a public bucket so the site could read images by their URL. Capped each
+-- file at 20 MB and only allowed image types.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'portfolio',
   'portfolio',
   true,
-  10485760, -- 10 MB per file
+  20971520,
   array['image/png','image/jpeg','image/jpg','image/webp','image/gif','image/avif']
 )
 on conflict (id) do update
@@ -19,24 +16,20 @@ on conflict (id) do update
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
 
--- 2. Allow any signed-in (authenticated) user — i.e. the admin — to upload.
+-- Let a signed-in admin upload, replace, and delete images in this bucket.
 drop policy if exists "portfolio_authenticated_insert" on storage.objects;
 create policy "portfolio_authenticated_insert"
   on storage.objects for insert to authenticated
   with check (bucket_id = 'portfolio');
 
--- 3. Allow the admin to overwrite / replace images.
 drop policy if exists "portfolio_authenticated_update" on storage.objects;
 create policy "portfolio_authenticated_update"
   on storage.objects for update to authenticated
   using (bucket_id = 'portfolio');
 
--- 4. Allow the admin to delete images.
 drop policy if exists "portfolio_authenticated_delete" on storage.objects;
 create policy "portfolio_authenticated_delete"
   on storage.objects for delete to authenticated
   using (bucket_id = 'portfolio');
 
--- NOTE: public READ is handled by the bucket's public flag (the
--- /storage/v1/object/public/portfolio/... URLs bypass RLS), so no
--- explicit SELECT policy is required.
+-- The public bucket flag already handled reads, so we did not need a select policy.

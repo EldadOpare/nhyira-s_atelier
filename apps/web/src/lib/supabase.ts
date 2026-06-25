@@ -9,8 +9,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-/**
- * Browser-side Supabase client.
- * Automatically manages the session in localStorage and handles token refresh.
- */
+// This client ran in the browser with the public anon key. It kept the login
+// session and refreshed the token on its own.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { FaInstagram, FaTiktok, FaWhatsapp, FaArrowRight } from "react-icons/fa";
 import { Menu, X } from "lucide-react";
 import { useListPortfolio, useSubmitEnquiry } from "@workspace/api-client-react";
+import { useCategories } from "@/lib/categories";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +21,8 @@ const card1 = "/assets/1_1780130493933.png";
 const card2 = "/assets/2_1780130493934.png";
 const card3 = "/assets/3_1780130493934.png";
 
-const services = [
+// Shown if the categories have not loaded yet, so the page never looks empty.
+const FALLBACK_SERVICES = [
   "Balloon & Floral Installations",
   "Backdrops & Setups",
   "Curated Gift Sets",
@@ -95,6 +97,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const { data: portfolioItems, isLoading: portfolioLoading } = useListPortfolio({ published: true });
+  const { data: categoryData } = useCategories();
+  const services = categoryData?.length ? categoryData.map((c) => c.name) : FALLBACK_SERVICES;
   const submitEnquiry = useSubmitEnquiry();
   const { toast } = useToast();
 
@@ -591,7 +595,7 @@ export default function Home() {
                       delay: 0.08,
                     },
                     {
-                      href: "https://wa.me/233558112779",
+                      href: "https://wa.me/233558112779?text=Hi%20Nhyira's%20Atelier!%20I'd%20love%20to%20enquire%20about%20a%20setup.",
                       icon: <FaWhatsapp className="w-5 h-5" />,
                       iconBg: "bg-[#25D366]",
                       platform: "WhatsApp",
