@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useListPortfolio, useCreatePortfolioItem, useUpdatePortfolioItem, useDeletePortfolioItem, getListPortfolioQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import { uploadPortfolioImage } from "@/lib/upload";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,22 @@ export default function AdminPortfolio() {
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "images" });
+  const [uploading, setUploading] = useState<Record<number, boolean>>({});
+
+  const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(u => ({ ...u, [index]: true }));
+    try {
+      const url = await uploadPortfolioImage(file);
+      form.setValue(`images.${index}.url`, url, { shouldValidate: true });
+    } catch (err: any) {
+      alert(`Upload failed: ${err?.message ?? err}`);
+    } finally {
+      setUploading(u => ({ ...u, [index]: false }));
+    }
+  };
 
   useEffect(() => {
     setHeader({
@@ -104,21 +121,47 @@ export default function AdminPortfolio() {
                     )} />
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#AFAFAF] uppercase tracking-wider mb-2.5">Images (URLs)</p>
-                    <div className="space-y-2.5">
-                      {fields.map((field, index) => (
-                        <div key={field.id} className="flex gap-2">
-                          <FormField control={form.control} name={`images.${index}.url`} render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl><Input {...field} placeholder="https://…" className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E] h-9" /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <Button type="button" variant="outline" size="icon" onClick={() => remove(index)} className="rounded-lg border-[#EBEBEB] text-red-400 hover:bg-red-50 h-9 w-9">
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      ))}
+                    <p className="text-[11px] font-medium text-[#AFAFAF] uppercase tracking-wider mb-2.5">Images</p>
+                    <div className="space-y-3">
+                      {fields.map((field, index) => {
+                        const url = form.watch(`images.${index}.url`);
+                        return (
+                          <div key={field.id} className="flex gap-3 items-start">
+                            {/* Thumbnail / placeholder */}
+                            <div className="relative w-[72px] h-[72px] shrink-0 rounded-lg border border-[#EBEBEB] bg-[#FAFAFA] overflow-hidden flex items-center justify-center">
+                              {url ? (
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <ImageIcon size={18} className="text-[#D4D4D4]" />
+                              )}
+                              {uploading[index] && (
+                                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                  <span className="text-[9px] font-medium text-[#0D6E6E]">Uploading…</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* URL field + actions */}
+                            <div className="flex-1 space-y-2">
+                              <FormField control={form.control} name={`images.${index}.url`} render={({ field }) => (
+                                <FormItem>
+                                  <FormControl><Input {...field} placeholder="Upload a file or paste an image URL" className="bg-white rounded-lg border-[#EBEBEB] focus-visible:ring-[#0D6E6E] h-9" /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+                              <div className="flex gap-2">
+                                <label className={`inline-flex items-center gap-1.5 rounded-lg border border-[#EBEBEB] text-[12px] font-medium h-8 px-3 cursor-pointer hover:bg-[#F5F5F5] transition-colors ${uploading[index] ? "opacity-50 pointer-events-none" : ""}`}>
+                                  <Upload size={12} /> Upload
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(index, e)} />
+                                </label>
+                                <Button type="button" variant="outline" size="sm" onClick={() => remove(index)} className="rounded-lg border-[#EBEBEB] text-red-400 hover:bg-red-50 h-8 px-3 text-[12px]">
+                                  <Trash2 size={13} className="mr-1" /> Remove
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                       <Button type="button" variant="outline" size="sm" onClick={() => append({ url: "" })} className="rounded-lg border-[#EBEBEB] text-[12px] font-medium h-8">
                         + Add Image
                       </Button>
