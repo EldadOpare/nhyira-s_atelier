@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { FaInstagram, FaTiktok, FaWhatsapp, FaArrowRight } from "react-icons/fa";
@@ -16,12 +16,28 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CircularGallery } from "@/components/ui/circular-gallery";
+import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 
 const card1 = "/assets/1_1780130493933.png";
 const card2 = "/assets/2_1780130493934.png";
 const card3 = "/assets/3_1780130493934.png";
 
 // Shown if the categories have not loaded yet, so the page never looks empty.
+// Used when no portfolio photos have been published yet.
+const FALLBACK_HERO_IMAGES = [
+  "/assets/1_1780130493933.png",
+  "/assets/2_1780130493934.png",
+  "/assets/3_1780130493934.png",
+  "/assets/image_1780130880698.png",
+  "/assets/image_1780130964140.png",
+  "/assets/image_1780132583798.png",
+  "/assets/image_1780132617430.png",
+  "/assets/image_1780525240334.png",
+  "/assets/image_1780525498569.png",
+  "/assets/image_1780525632058.png",
+];
+
 const FALLBACK_SERVICES = [
   "Balloon & Floral Installations",
   "Backdrops & Setups",
@@ -99,6 +115,26 @@ export default function Home() {
   const { data: portfolioItems, isLoading: portfolioLoading } = useListPortfolio({ published: true });
   const { data: categoryData } = useCategories();
   const services = categoryData?.length ? categoryData.map((c) => c.name) : FALLBACK_SERVICES;
+  const portfolioImages = (portfolioItems ?? []).flatMap((item) => item.images ?? []);
+  const heroImages = (portfolioImages.length ? portfolioImages : FALLBACK_HERO_IMAGES)
+    .slice(0, 12)
+    .map((src) => ({ src }));
+  const worksRef = useRef<HTMLDivElement>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const onResize = () => setIsNarrow(window.innerWidth < 768);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  // The ring needs enough cards to look full, so short lists are repeated.
+  const worksBase = portfolioItems ?? [];
+  const galleryItems = worksBase.length
+    ? Array.from({ length: Math.max(worksBase.length, Math.ceil(8 / worksBase.length) * worksBase.length) }, (_, i) => {
+        const item = worksBase[i % worksBase.length];
+        return { title: item.title, category: item.category, image: item.images[0] || "https://placehold.co/600x800/F9F5EE/0D6E6E?text=Nhyira's" };
+      })
+    : [];
   const submitEnquiry = useSubmitEnquiry();
   const { toast } = useToast();
 
@@ -228,67 +264,39 @@ export default function Home() {
           </AnimatePresence>
 
           {/* Hero */}
-          <section className="min-h-screen pt-24 px-6 md:px-12 flex items-center bg-white relative">
-            <div className="absolute top-32 left-6 md:left-12">
-              <span className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">ATELIER</span>
-            </div>
-            
-            <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-12 mt-12">
-              {/* Left Column */}
-              <div className="w-full lg:w-[60%] flex flex-col z-10">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 0.2 }}
-                >
-                  <h1 className="font-heading text-[12vw] lg:text-[7vw] leading-[0.9] tracking-tight">
-                    <span className="block text-[#0A4F4F]">Curated</span>
-                    <span className="block text-[#C9A84C] italic pr-8 lg:text-right">Experiences</span>
-                    <span className="block font-sans font-light text-2xl lg:text-4xl text-[#0A4F4F] my-4 ml-2">for every</span>
-                    <span className="block text-[#0A4F4F]">Moment.</span>
-                  </h1>
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 0.8 }}
-                  className="mt-16 flex items-center gap-6"
-                >
-                  <a href="#contact" className="flex items-center gap-2 text-[10px] font-label tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
-                    GET IN TOUCH <FaArrowRight />
-                  </a>
-                  <a href="#works" className="text-[10px] font-label tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
-                    VIEW WORKS
-                  </a>
-                </motion.div>
-              </div>
-
-              {/* Right Column */}
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 1, delay: 0.6 }}
-                className="w-full lg:w-[40%] flex justify-end"
+          <ImageStreamHero
+            images={heroImages}
+            axis={64}
+            className="min-h-screen w-full bg-white"
+          >
+            <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 pt-28 pb-12 text-center">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className="font-heading text-[14vw] leading-[0.9] tracking-tight sm:text-[10vw] lg:text-[6.5vw]"
               >
-                <div className="flex flex-col space-y-4 text-right">
-                  {services.map((service, idx) => (
-                    <div key={idx} className="flex items-center justify-end gap-3 text-[10px] font-label tracking-[0.2em] text-[#0D6E6E] uppercase">
-                      <span className="w-1 h-1 bg-[#C9A84C] rounded-full"></span>
-                      {service}
-                    </div>
-                  ))}
-                </div>
+                <span className="block text-[#0A4F4F]">Curated</span>
+                <span className="block text-[#C9A84C] italic">Experiences</span>
+                <span className="block font-sans font-light text-xl sm:text-2xl lg:text-3xl text-[#0A4F4F] my-3">for every</span>
+                <span className="block text-[#0A4F4F]">Moment.</span>
+              </motion.h1>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.8 }}
+                className="flex items-center gap-6 rounded-full bg-white/85 px-6 py-3 backdrop-blur"
+              >
+                <a href="#contact" className="flex items-center gap-2 text-[10px] font-label font-medium tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
+                  GET IN TOUCH <FaArrowRight />
+                </a>
+                <a href="#works" className="text-[10px] font-label font-medium tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
+                  VIEW WORKS
+                </a>
               </motion.div>
             </div>
-
-            <motion.div 
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 1.5, delay: 1, ease: "easeInOut" }}
-              className="absolute bottom-12 left-0 right-0 h-px bg-[#0D6E6E]/20 origin-left"
-            />
-          </section>
+          </ImageStreamHero>
 
           {/* Services */}
           <section id="services" className="py-32 px-6 md:px-12 bg-white relative">
@@ -317,52 +325,40 @@ export default function Home() {
           </section>
 
           {/* Works */}
-          <section id="works" className="py-32 px-6 md:px-12 bg-[#F9F5EE]">
-            <div className="max-w-full mx-auto">
-              <div className="mb-20">
-                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">PORTFOLIO</p>
-                <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F]">Our Works</h2>
-              </div>
-
-              {portfolioLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0A4F4F]/10 border border-[#0A4F4F]/10">
-                  {[1, 2, 3, 4, 5, 6].map(i => (
+          <section id="works" className="bg-[#F9F5EE]">
+            {portfolioLoading ? (
+              <div className="py-32 px-6 md:px-12">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#0A4F4F]/10 border border-[#0A4F4F]/10">
+                  {[1, 2, 3].map(i => (
                     <div key={i} className="aspect-[4/3] bg-white animate-pulse" />
                   ))}
                 </div>
-              ) : !portfolioItems?.length ? (
-                <div className="text-center py-32 bg-white border border-[#0A4F4F]/10">
-                  <p className="font-heading italic text-3xl text-[#0A4F4F]">Curating beautiful moments...</p>
+              </div>
+            ) : !portfolioItems?.length ? (
+              <div className="py-32 px-6 md:px-12 text-center">
+                <p className="font-heading italic text-3xl text-[#0A4F4F]">Curating beautiful moments...</p>
+              </div>
+            ) : (
+              // Tall wrapper gives scroll distance; the inner stage sticks while the ring turns.
+              <div ref={worksRef} style={{ height: "400vh" }}>
+                <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
+                  <div className="absolute top-24 z-10 text-center px-6">
+                    <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-4">PORTFOLIO</p>
+                    <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F]">Our Works</h2>
+                    <p className="font-label text-xs text-[#0A4F4F]/60 mt-3">Scroll to explore · tap a piece to view</p>
+                  </div>
+                  <CircularGallery
+                    items={galleryItems}
+                    radius={isNarrow ? 380 : 600}
+                    onItemClick={(i) => {
+                      setActivePortfolioItem(portfolioItems[i % portfolioItems.length]);
+                      setSelectedImageIndex(0);
+                    }}
+                    scrollContainerRef={worksRef}
+                  />
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0A4F4F]/10 border border-[#0A4F4F]/10">
-                  {portfolioItems.map((item: any, i: number) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.1 }}
-                      className="relative overflow-hidden group cursor-pointer aspect-[4/3] bg-white"
-                      onClick={() => {
-                        setActivePortfolioItem(item);
-                        setSelectedImageIndex(0);
-                      }}
-                    >
-                      <img 
-                        src={item.images[0] || "https://placehold.co/800x600/F9F5EE/0D6E6E?text=Nhyira's"} 
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-[#0A4F4F]/90 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-8 text-center">
-                        <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] mb-4 uppercase">{item.category}</p>
-                        <h4 className="font-heading text-4xl text-white">{item.title}</h4>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </section>
 
           {/* Business Cards Showcase */}
