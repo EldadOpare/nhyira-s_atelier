@@ -454,6 +454,35 @@ export default function Home() {
                 <div className="mb-20 text-center">
                   <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">BOOK A MOMENT</p>
                   <h3 className="font-heading text-4xl md:text-6xl text-[#0A4F4F]">Let's Create Together</h3>
+                  <p className="font-sans text-sm text-[#0A4F4F]/60 mt-6">Prefer a quicker hello? Find us here.</p>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                    {/* Instagram's gradient can't come from a text colour, so it is painted through an SVG gradient. */}
+                    <svg width="0" height="0" className="absolute" aria-hidden>
+                      <defs>
+                        <linearGradient id="ig-gradient" x1="0" y1="1" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#F77737" />
+                          <stop offset="50%" stopColor="#E1306C" />
+                          <stop offset="100%" stopColor="#833AB4" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    {[
+                      { href: "https://wa.me/233558112779?text=Hi%20Nhyira's%20Atelier!%20I'd%20love%20to%20enquire%20about%20a%20setup.", icon: <FaWhatsapp className="w-6 h-6 text-[#25D366]" />, label: "+233 55 811 2779" },
+                      { href: "https://instagram.com/nhyiras_atelier", icon: <FaInstagram className="w-6 h-6" style={{ fill: "url(#ig-gradient)" }} />, label: "@nhyiras_atelier" },
+                      { href: "https://tiktok.com/@nhyiras_atelier", icon: <FaTiktok className="w-6 h-6 text-[#010101]" />, label: "@nhyiras_atelier" },
+                    ].map(({ href, icon, label }) => (
+                      <a
+                        key={href}
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2.5 px-2 py-1 text-sm font-medium text-[#0A4F4F] hover:text-[#C9A84C] transition-colors"
+                      >
+                        {icon}
+                        {label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
                 
                 <Form {...form}>
@@ -560,68 +589,6 @@ export default function Home() {
                     </div>
                   </form>
                 </Form>
-              </div>
-            </div>
-
-            {/* Bottom Half: Socials */}
-            <div className="bg-[#F9F5EE] py-20 px-6 md:px-16 w-full">
-              <div className="max-w-4xl mx-auto">
-
-                <div className="mb-12">
-                  <p className="font-label text-[10px] tracking-[0.25em] text-[#C9A84C] uppercase mb-3">OUR HANDLES</p>
-                  <h3 className="font-sans text-2xl font-medium text-[#0A4F4F]">Find us online</h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {[
-                    {
-                      href: "https://instagram.com/nhyiras_atelier",
-                      icon: <FaInstagram className="w-5 h-5" />,
-                      iconBg: "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737]",
-                      platform: "Instagram",
-                      handle: "@nhyiras_atelier",
-                      delay: 0,
-                    },
-                    {
-                      href: "https://tiktok.com/@nhyiras_atelier",
-                      icon: <FaTiktok className="w-5 h-5" />,
-                      iconBg: "bg-[#010101]",
-                      platform: "TikTok",
-                      handle: "@nhyiras_atelier",
-                      delay: 0.08,
-                    },
-                    {
-                      href: "https://wa.me/233558112779?text=Hi%20Nhyira's%20Atelier!%20I'd%20love%20to%20enquire%20about%20a%20setup.",
-                      icon: <FaWhatsapp className="w-5 h-5" />,
-                      iconBg: "bg-[#25D366]",
-                      platform: "WhatsApp",
-                      handle: "+233 55 811 2779",
-                      delay: 0.16,
-                    },
-                  ].map(({ href, icon, iconBg, platform, handle, delay }) => (
-                    <motion.a
-                      key={platform}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      initial={{ opacity: 0, y: 16 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4, delay }}
-                      whileHover={{ y: -3, transition: { duration: 0.2 } }}
-                      className="group flex sm:flex-col flex-row items-center sm:items-start gap-4 bg-white border border-[#0A4F4F]/10 rounded-2xl p-5 hover:border-[#0A4F4F]/20 hover:shadow-sm transition-all duration-300"
-                    >
-                      <div className={`w-9 h-9 rounded-xl ${iconBg} text-white flex items-center justify-center flex-shrink-0`}>
-                        {icon}
-                      </div>
-                      <div>
-                        <p className="font-label text-[8px] tracking-[0.2em] text-[#0A4F4F]/35 uppercase mb-1">{platform}</p>
-                        <p className="font-sans text-sm font-medium text-[#0A4F4F] leading-snug">{handle}</p>
-                      </div>
-                    </motion.a>
-                  ))}
-                </div>
-
               </div>
             </div>
           </section>
