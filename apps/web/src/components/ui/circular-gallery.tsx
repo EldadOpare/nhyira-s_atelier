@@ -30,6 +30,9 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
     // Auto-rotation adds on top of the scroll angle instead of fighting it.
     const scrollRotationRef = useRef(0);
     const autoRotationRef = useRef(0);
+    // Auto-rotation only runs once the section has been reached. Above it the
+    // ring sits at rest, so scrolling back up leaves it as it first appeared.
+    const startedRef = useRef(false);
 
     useEffect(() => {
       const handleScroll = () => {
@@ -42,6 +45,8 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
         const scrollable = rect.height - window.innerHeight;
         const progress = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
         scrollRotationRef.current = progress * 360;
+        startedRef.current = progress > 0;
+        if (!startedRef.current) autoRotationRef.current = 0;
         setRotation(scrollRotationRef.current + autoRotationRef.current);
 
         scrollTimeoutRef.current = setTimeout(() => setIsScrolling(false), 150);
@@ -56,7 +61,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
 
     useEffect(() => {
       const autoRotate = () => {
-        if (!isScrolling) {
+        if (!isScrolling && startedRef.current) {
           autoRotationRef.current += autoRotateSpeed;
           setRotation(scrollRotationRef.current + autoRotationRef.current);
         }
@@ -88,7 +93,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
             const totalRotation = rotation % 360;
             const relativeAngle = (itemAngle + totalRotation + 360) % 360;
             const normalizedAngle = Math.abs(relativeAngle > 180 ? 360 - relativeAngle : relativeAngle);
-            const opacity = Math.max(0.3, 1 - normalizedAngle / 180);
+            const opacity = Math.max(0.5, 1 - normalizedAngle / 180);
 
             return (
               <div
@@ -103,11 +108,13 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                   marginLeft: "-150px",
                   marginTop: "-200px",
                   opacity,
+                  // Without this the back of the ring shows through, mirrored.
+                  backfaceVisibility: "hidden",
                   transition: "opacity 0.3s linear",
                 }}
               >
                 <div
-                  className="relative w-full h-full overflow-hidden group cursor-pointer bg-white"
+                  className="relative w-full h-full overflow-hidden rounded-[18px] group cursor-pointer bg-white"
                   onClick={() => onItemClick?.(i)}
                 >
                   <img

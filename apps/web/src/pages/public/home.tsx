@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CircularGallery } from "@/components/ui/circular-gallery";
+import { HERO_IMAGES, SERVICE_IMAGES, SHOWCASE_WORKS } from "@/lib/showcase";
+import { WorksWheel } from "@/components/ui/works-wheel";
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 
 const card1 = "/assets/1_1780130493933.png";
@@ -24,19 +26,19 @@ const card2 = "/assets/2_1780130493934.png";
 const card3 = "/assets/3_1780130493934.png";
 
 // Shown if the categories have not loaded yet, so the page never looks empty.
-// Used when no portfolio photos have been published yet.
-const FALLBACK_HERO_IMAGES = [
-  "/assets/1_1780130493933.png",
-  "/assets/2_1780130493934.png",
-  "/assets/3_1780130493934.png",
-  "/assets/image_1780130880698.png",
-  "/assets/image_1780130964140.png",
-  "/assets/image_1780132583798.png",
-  "/assets/image_1780132617430.png",
-  "/assets/image_1780525240334.png",
-  "/assets/image_1780525498569.png",
-  "/assets/image_1780525632058.png",
-];
+// The corridor is sized off the screen's width, so on a tall phone it shrinks to
+// a thin strip. Taller cards, in the same ratio, fill the screen again.
+const HERO_PATH_DESKTOP = { turnExit: 12, turnBirth: 3, cardRadius: 1.1 };
+
+const HERO_PATH_NARROW = {
+  turnExit: 12,
+  cardRadius: 2.4,
+  turnBirth: 3,
+  cardWidth: 40,
+  cardHeight: 58,
+  birthHeight: 6.5,
+  exitHeight: 115,
+};
 
 const FALLBACK_SERVICES = [
   "Balloon & Floral Installations",
@@ -115,26 +117,37 @@ export default function Home() {
   const { data: portfolioItems, isLoading: portfolioLoading } = useListPortfolio({ published: true });
   const { data: categoryData } = useCategories();
   const services = categoryData?.length ? categoryData.map((c) => c.name) : FALLBACK_SERVICES;
-  const portfolioImages = (portfolioItems ?? []).flatMap((item) => item.images ?? []);
-  const heroImages = (portfolioImages.length ? portfolioImages : FALLBACK_HERO_IMAGES)
-    .slice(0, 12)
-    .map((src) => ({ src }));
   const worksRef = useRef<HTMLDivElement>(null);
+  const servicesRef = useRef<HTMLDivElement>(null);
   const [isNarrow, setIsNarrow] = useState(false);
+  // Portrait screens (phones, tablets held upright) get the taller hero corridor.
+  const [isTall, setIsTall] = useState(false);
   useEffect(() => {
-    const onResize = () => setIsNarrow(window.innerWidth < 768);
+    const onResize = () => {
+      setIsNarrow(window.innerWidth < 768);
+      setIsTall(window.innerHeight > window.innerWidth * 0.9);
+    };
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
   // The ring needs enough cards to look full, so short lists are repeated.
-  const worksBase = portfolioItems ?? [];
+  // Real pieces from the admin when there are any, otherwise the showcase set.
+  const worksBase = portfolioItems?.length ? portfolioItems : SHOWCASE_WORKS;
   const galleryItems = worksBase.length
     ? Array.from({ length: Math.max(worksBase.length, Math.ceil(8 / worksBase.length) * worksBase.length) }, (_, i) => {
         const item = worksBase[i % worksBase.length];
         return { title: item.title, category: item.category, image: item.images[0] || "https://placehold.co/600x800/F9F5EE/0D6E6E?text=Nhyira's" };
       })
     : [];
+  // Each service wears the first photo from its category, else a house image.
+  const serviceWheelItems = services.map((name, i) => ({
+    title: name,
+    image:
+      SERVICE_IMAGES[name] ??
+      worksBase.find((item) => item.category === name)?.images[0] ??
+      HERO_IMAGES[i % HERO_IMAGES.length].src,
+  }));
   const submitEnquiry = useSubmitEnquiry();
   const { toast } = useToast();
 
@@ -188,7 +201,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#0A4F4F] overflow-x-hidden selection:bg-[#0D6E6E] selection:text-white">
+    <div className="min-h-screen bg-white text-[#0A4F4F] overflow-x-clip selection:bg-[#0D6E6E] selection:text-white">
       <AnimatePresence>
         {loading && <LoaderScreen onComplete={() => setLoading(false)} />}
       </AnimatePresence>
@@ -265,8 +278,9 @@ export default function Home() {
 
           {/* Hero */}
           <ImageStreamHero
-            images={heroImages}
-            axis={64}
+            images={HERO_IMAGES}
+            axis={isTall ? 66 : 64}
+            path={isTall ? HERO_PATH_NARROW : HERO_PATH_DESKTOP}
             className="min-h-screen w-full bg-white"
           >
             <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 pt-28 pb-12 text-center">
@@ -299,27 +313,18 @@ export default function Home() {
           </ImageStreamHero>
 
           {/* Services */}
-          <section id="services" className="py-32 px-6 md:px-12 bg-white relative">
-            <div className="absolute top-20 left-6 md:left-12 z-0">
-              <span className="font-heading text-[20vw] leading-none text-gray-100 opacity-50 select-none">01</span>
-            </div>
-            
-            <div className="max-w-7xl mx-auto relative z-10 pt-20">
-              <div className="mb-24">
-                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">WHAT WE DO</p>
-                <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F]">Bespoke Services</h2>
-              </div>
-              
-              <div className="flex flex-col border-t border-[#0A4F4F]/10">
-                {services.map((service, i) => (
-                  <div key={service} className="group flex items-center justify-between py-7 md:py-12 px-3 md:px-6 border-b border-[#0A4F4F]/10 hover:bg-[#0D6E6E]/5 transition-colors duration-500 cursor-pointer">
-                    <span className="font-label text-sm text-[#0A4F4F]/40 tracking-widest w-10 md:w-16">0{i + 1}</span>
-                    <h3 className="flex-1 font-heading text-2xl md:text-5xl text-[#0A4F4F] text-center transition-transform duration-500 group-hover:scale-[1.02]">{service}</h3>
-                    <div className="w-16 flex justify-end">
-                      <FaArrowRight className="text-[#0A4F4F] opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-500" />
-                    </div>
-                  </div>
-                ))}
+          <section id="services" className="bg-white relative">
+            {/* Tall wrapper gives scroll distance; the sticky stage pins the wheel while it turns. */}
+            <div ref={servicesRef} style={{ height: `${(services.length + 1) * 70 + 100}vh` }}>
+              <div className="sticky top-0 h-screen pt-[68px]">
+                <WorksWheel
+                  className="h-full bg-white text-[#0A4F4F] font-heading"
+                  items={serviceWheelItems}
+                  label="Bespoke Services"
+                  action="Enquire"
+                  scrollContainerRef={servicesRef}
+                  onItemSelect={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                />
               </div>
             </div>
           </section>
@@ -334,10 +339,6 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-            ) : !portfolioItems?.length ? (
-              <div className="py-32 px-6 md:px-12 text-center">
-                <p className="font-heading italic text-3xl text-[#0A4F4F]">Curating beautiful moments...</p>
-              </div>
             ) : (
               // Tall wrapper gives scroll distance; the inner stage sticks while the ring turns.
               <div ref={worksRef} style={{ height: "400vh" }}>
@@ -349,9 +350,10 @@ export default function Home() {
                   </div>
                   <CircularGallery
                     items={galleryItems}
-                    radius={isNarrow ? 380 : 600}
+                    className={isNarrow ? "scale-[0.62] translate-y-[5vh]" : "scale-[0.72] translate-y-[7vh]"}
+                    radius={isNarrow ? 520 : 600}
                     onItemClick={(i) => {
-                      setActivePortfolioItem(portfolioItems[i % portfolioItems.length]);
+                      setActivePortfolioItem(worksBase[i % worksBase.length]);
                       setSelectedImageIndex(0);
                     }}
                     scrollContainerRef={worksRef}
@@ -583,7 +585,7 @@ export default function Home() {
                     />
 
                     <div className="pt-8">
-                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-xl py-8 transition-colors">
+                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-[16px] py-8 transition-colors">
                         {submitEnquiry.isPending ? "SENDING..." : "SEND ENQUIRY"}
                       </Button>
                     </div>
