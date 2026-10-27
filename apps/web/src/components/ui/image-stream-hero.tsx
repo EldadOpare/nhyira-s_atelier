@@ -141,6 +141,11 @@ export type ImageStreamHeroProps = {
    * @default 55
    */
   axis?: number;
+  /**
+   * Seconds before the corridor eases in (fading up as it settles from slightly
+   * zoomed). Omit for no entrance.
+   */
+  introDelay?: number;
   /** Override any part of the corridor geometry. Merged over the defaults. */
   path?: CorridorPath;
   /** Content rendered above the corridor. */
@@ -153,6 +158,7 @@ export function ImageStreamHero({
   cards = 9,
   speed = 18,
   axis = 55,
+  introDelay,
   path,
   children,
   className,
@@ -171,8 +177,9 @@ export function ImageStreamHero({
       // Pausing rather than disabling keeps the corridor whole: every card is
       // already dropped mid-flight by its negative delay, so it freezes as a
       // finished still instead of collapsing onto the axis.
-      `@media(prefers-reduced-motion:reduce){.${card}{animation-play-state:paused}}`,
-    [right, left, card, p],
+      `@keyframes ish-in-${id}{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:scale(1)}}` +
+      `@media(prefers-reduced-motion:reduce){.${card}{animation-play-state:paused}.ish-in-${id}{animation:none!important;opacity:1!important}}`,
+    [right, left, card, p, id],
   );
 
   return (
@@ -185,10 +192,14 @@ export function ImageStreamHero({
 
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className={cn("pointer-events-none absolute inset-0", introDelay !== undefined && `ish-in-${id}`)}
         style={{
           perspective: `${p.perspective}cqw`,
           perspectiveOrigin: `50% ${axis}%`,
+          ...(introDelay !== undefined && {
+            opacity: 0,
+            animation: `ish-in-${id} 1.8s cubic-bezier(0.22,1,0.36,1) ${introDelay}s forwards`,
+          }),
         }}
       >
         <div

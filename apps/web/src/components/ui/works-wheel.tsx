@@ -165,7 +165,12 @@ export function WorksWheel({
     // Keep the side cards of the ring inside the stage on a narrow screen.
     const sideSpace = w / 2 - cardW / 2 - w * 0.06 - 24;
     const face = compact ? 0.44 : RING_FACE;
-    const ringR = Math.min(cardH * RING_R, (w / 2 - cardW * face * 0.5 - 8) / 0.95);
+    const ringR = Math.min(
+      cardH * RING_R,
+      (w / 2 - cardW * face * 0.5 - 8) / 0.95,
+      // Keep the ring clear of the title above it and the list below it.
+      compact || w < 760 ? h * 0.5 - cardH * face * 0.5 - h * 0.17 : Infinity,
+    );
     // Shrink the ring's cards until the circle reads as a closed loop rather
     // than beads on a wire, however many pieces the wheel is given.
     const chord = count > 1 ? 2 * ringR * Math.sin(Math.PI / count) : ringR;
@@ -397,6 +402,8 @@ export function WorksWheel({
         <div
           ref={wheelRef}
           className="absolute top-1/2 left-1/2 [transform-style:preserve-3d]"
+          // Where the title sits above the wheel, drop the wheel a little so the two do not touch.
+          style={{ marginTop: metrics.stackTitle ? stage.h * 0.06 : 0 }}
         >
           {items.map((item, i) => {
             const Tag = (item.href ? "a" : "div") as "a";
@@ -460,7 +467,7 @@ export function WorksWheel({
         className={cn(
           "pointer-events-none absolute tracking-tight",
           // Centred in the ring on a wide stage; above it on a phone, where the ring is full.
-          metrics.compact ? "inset-x-4 top-[14%] text-center" : "inset-0 grid place-items-center",
+          metrics.stackTitle ? "inset-x-4 top-[6%] text-center" : "inset-0 grid place-items-center",
         )}
         style={{ fontSize: metrics.title }}
       >
@@ -472,7 +479,7 @@ export function WorksWheel({
           "pointer-events-none absolute tracking-tight opacity-0 text-balance leading-[1.05]",
           // Beside the card on a wide stage; above it, centred, when that is too tight.
           metrics.stackTitle
-            ? cn("inset-x-4 text-center", metrics.compact ? "top-[14%]" : "top-[7%]")
+            ? "inset-x-4 top-[6%] text-center"
             : "top-1/2 -translate-y-1/2",
         )}
         style={{

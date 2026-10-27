@@ -57,56 +57,100 @@ const enquirySchema = z.object({
   message: z.string().min(1, "Message is required"),
 });
 
+/** The Atelier's script wordmark. Animated, it is written out letter by letter;
+    static, it is the finished word. */
+function Wordmark({ animated, loop, loopSeconds, className }: { animated?: boolean; loop?: boolean; loopSeconds?: number; className: string }) {
+  return (
+    <svg viewBox="0 0 560 150" className={`${className} h-auto overflow-visible`} role="presentation">
+      <text
+        x="280"
+        y="108"
+        textAnchor="middle"
+        fontFamily="'Great Vibes', cursive"
+        fontSize="118"
+        fill="#C9A84C"
+        {...(animated ? { stroke: "#C9A84C", strokeWidth: 1.6, strokeLinejoin: "round" as const } : {})}
+      >
+        {Array.from("Nhyira's").map((ch, i) => (
+          <tspan
+            key={i}
+            className={animated ? (loop ? "loader-glyph-loop" : "loader-glyph") : undefined}
+            style={animated ? { animationDelay: loop ? `${i * 0.2}s` : `${0.3 + i * 0.28}s, ${1.4 + i * 0.28}s`, ...(loop && loopSeconds ? { animationDuration: `${loopSeconds}s` } : {}) } : undefined}
+          >
+            {ch}
+          </tspan>
+        ))}
+      </text>
+    </svg>
+  );
+}
+
+/** The full lockup - written wordmark, ATELIER, and the tagline. Animated, the
+    word is written out letter by letter, then ATELIER and the tagline fade in. */
+function Lockup({ animated, small }: { animated?: boolean; small?: boolean }) {
+  const fade = (delay: number) =>
+    animated ? { className: "loader-fade", style: { animationDelay: `${delay}s` } } : { className: "", style: undefined };
+  return (
+    <div className="flex flex-col items-center text-center">
+      <h1 aria-label="Nhyira's Atelier - Curated Experiences" className="mb-1">
+        <Wordmark
+          animated={animated}
+          loop={animated}
+          loopSeconds={5.4}
+          className={small ? "w-[14.5rem] sm:w-[20rem] lg:w-[24rem]" : "w-[17rem] md:w-[30rem]"}
+        />
+      </h1>
+      <p
+        className={`font-label tracking-[0.3em] text-[#0A4F4F] ${small ? "text-lg sm:text-2xl lg:text-3xl mb-3" : "text-2xl md:text-4xl mb-5"} ${fade(3.4).className}`}
+        style={fade(3.4).style}
+      >
+        ATELIER
+      </p>
+      <p
+        className={`font-serif italic text-[#0A4F4F] ${small ? "text-base sm:text-lg" : "text-xl"} ${fade(3.7).className}`}
+        style={fade(3.7).style}
+      >
+        Curated Experiences
+      </p>
+    </div>
+  );
+}
+
 function LoaderScreen({ onComplete }: { onComplete: () => void }) {
+  // The wordmark keeps writing itself on a loop while the page gets ready: the
+  // script font, and the first hero photos. It stays for at least one full pass.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 3000);
-    return () => clearTimeout(timer);
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        onComplete();
+      }
+    };
+    const minimum = new Promise((r) => setTimeout(r, 2800));
+    const ready = Promise.all([
+      document.fonts.load("118px 'Great Vibes'"),
+      ...HERO_IMAGES.slice(0, 4).map(
+        ({ src }) =>
+          new Promise((r) => {
+            const img = new Image();
+            img.onload = img.onerror = () => r(null);
+            img.src = src;
+          }),
+      ),
+    ]).catch(() => null);
+    Promise.all([minimum, ready]).then(finish);
+    const cap = setTimeout(finish, 7000);
+    return () => clearTimeout(cap);
   }, [onComplete]);
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const } }
-  };
 
   return (
     <motion.div
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.8 } }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white"
+      exit={{ opacity: 0, transition: { duration: 0.9, ease: "easeInOut" } }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-white"
     >
-      <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col items-center text-center">
-        <motion.h1 
-          variants={item}
-          className="font-brand text-6xl md:text-8xl text-[#C9A84C] mb-4"
-        >
-          Nhyira's
-        </motion.h1>
-        <motion.h2 
-          variants={item}
-          className="font-label text-2xl md:text-4xl tracking-[0.3em] text-[#0A4F4F] mb-6"
-        >
-          ATELIER
-        </motion.h2>
-        <motion.p 
-          variants={item}
-          className="font-serif italic text-xl text-[#0A4F4F] mb-6"
-        >
-          Curated Experiences
-        </motion.p>
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: "100px" }}
-          transition={{ duration: 1, delay: 1 }}
-          className="h-px bg-[#0D6E6E]"
-        />
-      </motion.div>
+      <Wordmark animated loop className="w-[17rem] md:w-[30rem]" />
     </motion.div>
   );
 }
@@ -124,10 +168,12 @@ export default function Home() {
   const [isNarrow, setIsNarrow] = useState(false);
   // Portrait screens (phones, tablets held upright) get the taller hero corridor.
   const [isTall, setIsTall] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
   const [heroK, setHeroK] = useState(1);
   useEffect(() => {
     const onResize = () => {
       setIsNarrow(window.innerWidth < 768);
+      setIsPhone(window.innerWidth < 640 && window.innerHeight > window.innerWidth);
       const ratio = window.innerHeight / window.innerWidth;
       setIsTall(ratio > 0.9);
       // 2.16 is a modern phone held upright; a tablet or short phone gets less.
@@ -159,6 +205,11 @@ export default function Home() {
       worksBase.find((item) => item.category === name)?.images[0] ??
       HERO_IMAGES[i % HERO_IMAGES.length].src,
   }));
+  const heroHeading = (
+    <div className="flex flex-col items-center px-6 pt-28 pb-5 text-center sm:pt-[calc(6rem+9svh)] sm:pb-10">
+      <Lockup small animated />
+    </div>
+  );
   const submitEnquiry = useSubmitEnquiry();
   // Everything a visitor can enquire about, so the form can name the exact piece.
   const enquirable: any[] = [...worksBase, ...floralWorks, ...BRIDAL_ENQUIRIES];
@@ -195,7 +246,7 @@ export default function Home() {
       if (activePortfolioItem.images && activePortfolioItem.images.length > 1) {
         setSelectedImageIndex((prev) => (prev + 1) % activePortfolioItem.images.length);
       }
-    }, 3000);
+    }, 3200);
     return () => clearInterval(interval);
   }, [activePortfolioItem]);
 
@@ -308,31 +359,52 @@ export default function Home() {
           </AnimatePresence>
 
           {/* Hero */}
-          <ImageStreamHero
-            images={HERO_IMAGES}
-            axis={isTall ? 66 : 64}
-            path={isTall ? heroPathTall(heroK) : HERO_PATH_DESKTOP}
-            className="min-h-[max(100svh,36rem)] w-full bg-white"
-          >
-            <div className="relative z-10 flex min-h-[max(100svh,36rem)] flex-col items-center justify-start px-6 pt-24 pb-10 text-center">
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.2 }}
-                className="font-heading font-medium leading-[0.86] tracking-[-0.02em] text-[12vw] sm:text-[9vw] lg:text-[5.5vw] max-[900px]:landscape:text-[11vh]"
-              >
-                <span className="block text-[#0A4F4F]">Curated</span>
-                <span className="block text-[#C9A84C] italic font-normal">Experiences</span>
-                <span className="my-3 flex items-center justify-center gap-4 font-poppins text-[11px] font-normal uppercase tracking-[0.4em] text-[#0A4F4F]/70 sm:text-xs lg:my-4">
-                  <span className="h-px w-8 bg-[#C9A84C] sm:w-12" />
-                  for every
-                  <span className="h-px w-8 bg-[#C9A84C] sm:w-12" />
-                </span>
-                <span className="block text-[#0A4F4F]">Moment.</span>
-              </motion.h1>
-
-            </div>
-          </ImageStreamHero>
+          {isPhone ? (
+            // On a phone the corridor shrinks every photo toward a vanishing point, so
+            // two rows of large photos drift past instead, each one seen whole.
+            <section className="relative flex h-[max(100svh,36rem)] w-full flex-col overflow-hidden bg-white">
+              {heroHeading}
+              <div className="flex min-h-0 flex-1 flex-col gap-3 pb-5">
+                {[HERO_IMAGES.slice(0, 6), HERO_IMAGES.slice(6)].map((row, r) => (
+                  <motion.div
+                    key={r}
+                    initial={{ opacity: 0, x: r === 0 ? 80 : -80 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 1.4, delay: 0.6 + r * 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative min-h-0 flex-1 overflow-hidden"
+                  >
+                    <div
+                      className={`flex h-full w-max gap-3 pr-3 ${r === 0 ? "hero-drift-left" : "hero-drift-right"}`}
+                    >
+                      {[...row, ...row].map((img, i) => (
+                        <img
+                          key={i}
+                          src={img.src}
+                          alt=""
+                          aria-hidden
+                          draggable={false}
+                          className="h-full aspect-[3/4] shrink-0 rounded-[18px] object-cover"
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <ImageStreamHero
+              images={HERO_IMAGES}
+              axis={isTall ? 66 : 64}
+              path={isTall ? heroPathTall(heroK) : HERO_PATH_DESKTOP}
+              introDelay={0.4}
+              speed={26}
+              className="min-h-[max(100svh,36rem)] w-full bg-white"
+            >
+              <div className="relative z-10 flex min-h-[max(100svh,36rem)] flex-col items-center justify-start text-center">
+                {heroHeading}
+              </div>
+            </ImageStreamHero>
+          )}
 
           {/* Services */}
           <section id="services" className="bg-white relative">
