@@ -123,7 +123,7 @@ const CircularGallery = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     draggable={false}
                   />
-                  <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-[#0A4F4F]/90 to-transparent text-white">
+                  <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-black/55 via-black/20 to-transparent text-white">
                     <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-1">{item.category}</p>
                     <h3 className="font-heading text-2xl">{item.title}</h3>
                   </div>

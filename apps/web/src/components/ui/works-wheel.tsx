@@ -163,6 +163,7 @@ export function WorksWheel({
     const cardH = cardW / CARD_RATIO;
     const drumR = cardH * DRUM;
     // Keep the side cards of the ring inside the stage on a narrow screen.
+    const sideSpace = w / 2 - cardW / 2 - w * 0.06 - 24;
     const face = compact ? 0.44 : RING_FACE;
     const ringR = Math.min(cardH * RING_R, (w / 2 - cardW * face * 0.5 - 8) / 0.95);
     // Shrink the ring's cards until the circle reads as a closed loop rather
@@ -183,6 +184,10 @@ export function WorksWheel({
       title: Math.max(cardH * TITLE, compact ? 18 : 0),
       index: Math.max(cardH * INDEX, compact ? 11 : 0),
       compact,
+      // Room left of the front card for its name. When there is not enough, the
+      // name moves above the card instead of wrapping behind it.
+      sideSpace,
+      stackTitle: compact || sideSpace < 230,
     };
   }, [stage, count]);
 
@@ -464,13 +469,16 @@ export function WorksWheel({
       <div
         ref={titleRef}
         className={cn(
-          "pointer-events-none absolute tracking-tight opacity-0",
-          // Beside the card on a wide stage; above it, centred, on a phone.
-          metrics.compact
-            ? "inset-x-4 top-[14%] text-center"
-            : "top-1/2 left-[8%] -translate-y-1/2",
+          "pointer-events-none absolute tracking-tight opacity-0 text-balance leading-[1.05]",
+          // Beside the card on a wide stage; above it, centred, when that is too tight.
+          metrics.stackTitle
+            ? cn("inset-x-4 text-center", metrics.compact ? "top-[14%]" : "top-[7%]")
+            : "top-1/2 -translate-y-1/2",
         )}
-        style={{ fontSize: metrics.title }}
+        style={{
+          fontSize: metrics.stackTitle ? metrics.title : Math.min(metrics.title, 44),
+          ...(metrics.stackTitle ? {} : { left: "6%", width: metrics.sideSpace }),
+        }}
       >
         {items[active]?.title}
       </div>

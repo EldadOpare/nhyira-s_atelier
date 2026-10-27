@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Great+Vibes&family=Poppins:wght@400;500&family=Inter:wght@300;400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -47,6 +47,8 @@
   --font-heading: 'Cormorant Garamond', serif;
   --font-brand: 'Great Vibes', cursive;
   --font-label: 'Inter', sans-serif;
+  --font-price: 'Poppins', sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

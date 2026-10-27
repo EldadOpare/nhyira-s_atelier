@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { FaInstagram, FaTiktok, FaWhatsapp, FaArrowRight } from "react-icons/fa";
-import { Menu, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { useListPortfolio, useSubmitEnquiry } from "@workspace/api-client-react";
 import { useCategories } from "@/lib/categories";
 import { useToast } from "@/hooks/use-toast";
@@ -15,30 +15,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { CircularGallery } from "@/components/ui/circular-gallery";
-import { HERO_IMAGES, SERVICE_IMAGES, SHOWCASE_WORKS } from "@/lib/showcase";
+import { BRIDAL_ADDONS, BRIDAL_BOOKING, BRIDAL_ENQUIRIES, BRIDAL_GROUPS, BRIDAL_PACKAGES, BUDGET_TIERS, CURATE_STEPS, FLORAL_CATEGORY, HERO_IMAGES, SERVICE_IMAGES, SHOWCASE_WORKS, isFloral } from "@/lib/showcase";
 import { WorksWheel } from "@/components/ui/works-wheel";
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 
-const card1 = "/assets/1_1780130493933.png";
-const card2 = "/assets/2_1780130493934.png";
-const card3 = "/assets/3_1780130493934.png";
 
 // Shown if the categories have not loaded yet, so the page never looks empty.
 // The corridor is sized off the screen's width, so on a tall phone it shrinks to
 // a thin strip. Taller cards, in the same ratio, fill the screen again.
 const HERO_PATH_DESKTOP = { turnExit: 12, turnBirth: 3, cardRadius: 1.1 };
 
-const HERO_PATH_NARROW = {
+/** Corridor for portrait screens. It is sized off the screen's width, so on a
+    tall phone it shrinks to a strip; `k` grows the cards back to fill the
+    height, and eases off on shorter screens so they do not crowd the text. */
+const heroPathTall = (k: number) => ({
   turnExit: 12,
-  cardRadius: 2.4,
   turnBirth: 3,
-  cardWidth: 40,
-  cardHeight: 58,
-  birthHeight: 6.5,
-  exitHeight: 115,
-};
+  cardRadius: 2.4,
+  cardWidth: 40 * k,
+  cardHeight: 58 * k,
+  birthHeight: 6.5 * k,
+  exitHeight: 115 * k,
+});
 
 const FALLBACK_SERVICES = [
   "Balloon & Floral Installations",
@@ -116,16 +116,22 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const { data: portfolioItems, isLoading: portfolioLoading } = useListPortfolio({ published: true });
   const { data: categoryData } = useCategories();
-  const services = categoryData?.length ? categoryData.map((c) => c.name) : FALLBACK_SERVICES;
+  const allServices = categoryData?.length ? categoryData.map((c) => c.name) : FALLBACK_SERVICES;
+  const services = allServices.filter((name) => !isFloral(name));
+  const floralService = allServices.find(isFloral);
   const worksRef = useRef<HTMLDivElement>(null);
   const servicesRef = useRef<HTMLDivElement>(null);
   const [isNarrow, setIsNarrow] = useState(false);
   // Portrait screens (phones, tablets held upright) get the taller hero corridor.
   const [isTall, setIsTall] = useState(false);
+  const [heroK, setHeroK] = useState(1);
   useEffect(() => {
     const onResize = () => {
       setIsNarrow(window.innerWidth < 768);
-      setIsTall(window.innerHeight > window.innerWidth * 0.9);
+      const ratio = window.innerHeight / window.innerWidth;
+      setIsTall(ratio > 0.9);
+      // 2.16 is a modern phone held upright; a tablet or short phone gets less.
+      setHeroK(Math.min(1, Math.max(0.55, ratio / 2.16)));
     };
     onResize();
     window.addEventListener("resize", onResize);
@@ -133,7 +139,12 @@ export default function Home() {
   }, []);
   // The ring needs enough cards to look full, so short lists are repeated.
   // Real pieces from the admin when there are any, otherwise the showcase set.
-  const worksBase = portfolioItems?.length ? portfolioItems : SHOWCASE_WORKS;
+  // Floral pieces are kept apart from the balloon work and get their own section.
+  const realWorks = portfolioItems ?? [];
+  const worksBase = realWorks.length ? realWorks.filter((w) => !isFloral(w.category)) : SHOWCASE_WORKS.filter((w) => !isFloral(w.category));
+  const floralWorks = realWorks.some((w) => isFloral(w.category))
+    ? realWorks.filter((w) => isFloral(w.category))
+    : SHOWCASE_WORKS.filter((w) => isFloral(w.category));
   const galleryItems = worksBase.length
     ? Array.from({ length: Math.max(worksBase.length, Math.ceil(8 / worksBase.length) * worksBase.length) }, (_, i) => {
         const item = worksBase[i % worksBase.length];
@@ -149,13 +160,26 @@ export default function Home() {
       HERO_IMAGES[i % HERO_IMAGES.length].src,
   }));
   const submitEnquiry = useSubmitEnquiry();
+  // Everything a visitor can enquire about, so the form can name the exact piece.
+  const enquirable: any[] = [...worksBase, ...floralWorks, ...BRIDAL_ENQUIRIES];
+  const [enquiryItem, setEnquiryItem] = useState<any>(null);
+  const [floralTab, setFloralTab] = useState<"bouquets" | "curate" | "packages">("bouquets");
+  const floralPhotos = floralWorks.flatMap((item: any) => item.images.map((src: string) => ({ src, item })));
+  const formServices = allServices.some(isFloral) ? allServices : [...allServices, FLORAL_CATEGORY];
+  const pickEnquiryItem = (item: any | null) => {
+    setEnquiryItem(item);
+    if (item && formServices.includes(item.category)) form.setValue("service", item.category, { shouldValidate: true });
+  };
+  const goToContact = (service?: string, item?: any) => {
+    if (item) pickEnquiryItem(item);
+    else if (service && formServices.includes(service)) form.setValue("service", service, { shouldValidate: true });
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+  };
   const { toast } = useToast();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activePortfolioItem, setActivePortfolioItem] = useState<any>(null);
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const cards = [card1, card2, card3];
   
   useEffect(() => {
     const handleScroll = () => {
@@ -188,8 +212,13 @@ export default function Home() {
   });
 
   const onSubmit = (values: z.infer<typeof enquirySchema>) => {
-    submitEnquiry.mutate({ data: values }, {
+    // The API has no item field, so the chosen piece leads the message.
+    const message = enquiryItem
+      ? `Enquiring about: ${enquiryItem.title} (${enquiryItem.category})${enquiryItem.price ? ` - ${enquiryItem.price}` : ""}\n\n${values.message}`
+      : values.message;
+    submitEnquiry.mutate({ data: { ...values, message } }, {
       onSuccess: () => {
+        setEnquiryItem(null);
         toast({
           title: "Thank you!",
           description: "Nhyira will be in touch soon.",
@@ -222,6 +251,7 @@ export default function Home() {
             <div className="hidden md:flex gap-8 font-label text-[10px] tracking-[0.2em]">
               <a href="#works" className="hover:text-[#C9A84C] transition-colors">WORKS</a>
               <a href="#services" className="hover:text-[#C9A84C] transition-colors">SERVICES</a>
+              <a href="#florals" className="hover:text-[#C9A84C] transition-colors">FLORALS</a>
               <a href="#contact" className="hover:text-[#C9A84C] transition-colors">CONTACT</a>
             </div>
             <button
@@ -256,6 +286,7 @@ export default function Home() {
                   {[
                     { href: "#works", label: "Works" },
                     { href: "#services", label: "Services" },
+                    { href: "#florals", label: "Florals" },
                     { href: "#contact", label: "Contact" },
                   ].map(({ href, label }) => (
                     <a
@@ -280,35 +311,26 @@ export default function Home() {
           <ImageStreamHero
             images={HERO_IMAGES}
             axis={isTall ? 66 : 64}
-            path={isTall ? HERO_PATH_NARROW : HERO_PATH_DESKTOP}
-            className="min-h-screen w-full bg-white"
+            path={isTall ? heroPathTall(heroK) : HERO_PATH_DESKTOP}
+            className="min-h-[max(100svh,36rem)] w-full bg-white"
           >
-            <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 pt-28 pb-12 text-center">
+            <div className="relative z-10 flex min-h-[max(100svh,36rem)] flex-col items-center justify-start px-6 pt-24 pb-10 text-center">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.2 }}
-                className="font-heading text-[14vw] leading-[0.9] tracking-tight sm:text-[10vw] lg:text-[6.5vw]"
+                className="font-heading font-medium leading-[0.86] tracking-[-0.02em] text-[12vw] sm:text-[9vw] lg:text-[5.5vw] max-[900px]:landscape:text-[11vh]"
               >
                 <span className="block text-[#0A4F4F]">Curated</span>
-                <span className="block text-[#C9A84C] italic">Experiences</span>
-                <span className="block font-sans font-light text-xl sm:text-2xl lg:text-3xl text-[#0A4F4F] my-3">for every</span>
+                <span className="block text-[#C9A84C] italic font-normal">Experiences</span>
+                <span className="my-3 flex items-center justify-center gap-4 font-poppins text-[11px] font-normal uppercase tracking-[0.4em] text-[#0A4F4F]/70 sm:text-xs lg:my-4">
+                  <span className="h-px w-8 bg-[#C9A84C] sm:w-12" />
+                  for every
+                  <span className="h-px w-8 bg-[#C9A84C] sm:w-12" />
+                </span>
                 <span className="block text-[#0A4F4F]">Moment.</span>
               </motion.h1>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.8 }}
-                className="flex items-center gap-6 rounded-full bg-white/85 px-6 py-3 backdrop-blur"
-              >
-                <a href="#contact" className="flex items-center gap-2 text-[10px] font-label font-medium tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
-                  GET IN TOUCH <FaArrowRight />
-                </a>
-                <a href="#works" className="text-[10px] font-label font-medium tracking-[0.2em] text-[#0A4F4F] hover:text-[#C9A84C] transition-colors">
-                  VIEW WORKS
-                </a>
-              </motion.div>
             </div>
           </ImageStreamHero>
 
@@ -363,74 +385,199 @@ export default function Home() {
             )}
           </section>
 
-          {/* Business Cards Showcase */}
-          <section id="cards" className="py-32 px-6 md:px-12 bg-white overflow-hidden">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-16 flex flex-col items-center text-center">
-                <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-4">THE ATELIER</p>
-                <h2 className="font-heading text-4xl md:text-5xl text-[#0A4F4F] mb-4">The Cards We Leave Behind</h2>
-                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F]/50 uppercase">Click any card to view</p>
+          {/* Florals — the bridal floral side of the Atelier, kept apart from the balloons */}
+          <section id="florals" className="bg-[#FBF3F1] py-20 md:py-32 px-6 md:px-12">
+            <div className="max-w-6xl mx-auto">
+              <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-end">
+                <div>
+                  <p className="font-label text-[10px] tracking-[0.25em] text-[#B4637A] uppercase mb-5">BRIDAL FLORALS · ACCRA</p>
+                  <h2 className="font-heading text-5xl md:text-7xl text-[#0A4F4F] leading-[0.95]">
+                    Flowers, styled to <span className="italic text-[#B4637A]">your story.</span>
+                  </h2>
+                  <p className="font-sans text-sm md:text-base text-[#0A4F4F]/70 leading-relaxed mt-6 max-w-lg">
+                    Bridal bouquets, bridesmaids and boutonnières. Fresh flowers as standard, artificial on request, and
+                    always curated to your budget.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 lg:items-stretch xl:items-center lg:justify-end">
+                  <Button
+                    onClick={() => goToContact(floralService ?? FLORAL_CATEGORY)}
+                    className="bg-[#B4637A] hover:bg-[#9D5368] text-white rounded-[16px] px-8 py-6 font-label text-[10px] tracking-[0.2em] uppercase"
+                  >
+                    CURATE MY BOUQUET
+                  </Button>
+                  <a
+                    href="https://wa.me/233558112779?text=Hi%20Nhyira's%20Atelier!%20I'd%20love%20a%20bridal%20floral%20quote."
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-[16px] bg-white px-8 py-4 font-label text-[10px] tracking-[0.2em] uppercase text-[#0A4F4F] hover:text-[#B4637A] transition-colors"
+                  >
+                    <FaWhatsapp className="w-4 h-4 text-[#25D366]" /> WHATSAPP A QUOTE
+                  </a>
+                </div>
               </div>
 
-              <div className="flex justify-center items-end gap-3 sm:gap-6 md:gap-10 relative">
-                {cards.map((card, i) => (
-                  <motion.div
-                    key={i}
-                    layoutId={`business-card-${i}`}
-                    onClick={() => setExpandedCard(i)}
-                    initial={{ opacity: 0, y: 40 }}
+              {/* Photos */}
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+                {floralPhotos.map(({ src, item }, i) => (
+                  <motion.button
+                    key={src}
+                    type="button"
+                    initial={{ opacity: 0, y: 24 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7, delay: i * 0.15 }}
-                    whileHover={{ y: -16, scale: 1.04, transition: { duration: 0.3 } }}
-                    className="cursor-pointer shadow-xl rounded-sm"
-                    style={{ rotate: (i - 1) * -4, zIndex: i === 1 ? 10 : i }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.6, delay: (i % 4) * 0.08 }}
+                    onClick={() => {
+                      setActivePortfolioItem(item);
+                      setSelectedImageIndex(Math.max(0, item.images.indexOf(src)));
+                    }}
+                    aria-label={item.title}
+                    className={`group aspect-[3/4] overflow-hidden rounded-[18px] bg-white ${i % 2 === 1 ? "md:mt-8" : ""}`}
                   >
-                    <img src={card} alt={`Business Card ${i + 1}`} className="w-24 sm:w-40 md:w-60 lg:w-72 h-auto rounded-sm" />
-                  </motion.div>
+                    <img src={src} alt={item.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  </motion.button>
                 ))}
               </div>
 
-              <div className="mt-16 w-full flex flex-col items-center">
-                <div className="h-px w-24 bg-[#0D6E6E]/20 mb-6" />
-                <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F]/50 uppercase">Nhyira's Atelier · Curated Experiences</p>
+              {/* Rate card */}
+              <div className="mt-16 md:mt-24">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                  <h3 className="font-heading text-3xl md:text-4xl text-[#0A4F4F]">Rate card</h3>
+                  <div className="inline-flex rounded-full bg-white p-1" role="tablist">
+                    {([
+                      ["bouquets", "Bouquets"],
+                      ["curate", "Curate yours"],
+                      ["packages", "Packages"],
+                    ] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        role="tab"
+                        aria-selected={floralTab === key}
+                        onClick={() => setFloralTab(key)}
+                        className={`rounded-full px-4 py-2 text-xs font-medium transition-colors ${floralTab === key ? "bg-[#B4637A] text-white" : "text-[#0A4F4F]/70 hover:text-[#0A4F4F]"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {floralTab === "bouquets" && (
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {BRIDAL_GROUPS.map((group, gi) => (
+                      <div key={group.title} className={`bg-white rounded-[20px] p-6 md:p-8 ${gi === 0 ? "md:row-span-2" : ""}`}>
+                        <p className="font-label text-[10px] tracking-[0.2em] text-[#B4637A] uppercase mb-2">{group.title}</p>
+                        <ul className="divide-y divide-[#0A4F4F]/10">
+                          {group.rows.map((row) => (
+                            <li key={row.id} className="py-4 flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="font-heading text-xl md:text-2xl text-[#0A4F4F] leading-tight">{row.name}</p>
+                                <p className="text-sm text-[#0A4F4F]/60 mt-1 leading-relaxed">{row.note}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-price text-[15px] font-medium text-[#B4637A] whitespace-nowrap">{row.price}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => goToContact(FLORAL_CATEGORY, BRIDAL_ENQUIRIES.find((e) => e.id === `rate-${row.id}`))}
+                                  className="mt-1 text-[11px] text-[#B4637A] underline underline-offset-4 hover:text-[#9D5368]"
+                                >
+                                  Enquire
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                    <p className="md:col-span-2 text-xs text-[#0A4F4F]/55">
+                      Starting prices per piece, Accra. Made with fresh flowers; artificial flowers are available on request. Your final quote depends on your design, flowers and size.
+                    </p>
+                  </div>
+                )}
+
+                {floralTab === "curate" && (
+                  <div className="grid lg:grid-cols-2 gap-5">
+                    <div className="bg-white rounded-[20px] p-6 md:p-8">
+                      <p className="font-label text-[10px] tracking-[0.2em] text-[#B4637A] uppercase mb-2">OUR SIGNATURE SERVICE</p>
+                      <h4 className="font-heading text-3xl md:text-4xl text-[#0A4F4F] leading-tight">Curate your bouquet</h4>
+                      <p className="text-sm text-[#0A4F4F]/70 mt-3">Tell us your budget. We'll design the most beautiful bouquet around it.</p>
+                      <ol className="mt-6 space-y-4">
+                        {CURATE_STEPS.map((step, i) => (
+                          <li key={i} className="flex gap-4">
+                            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#FBF3F1] font-price text-xs font-medium text-[#B4637A]">{i + 1}</span>
+                            <p className="text-sm text-[#0A4F4F]/75 leading-relaxed">{step}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="bg-white rounded-[20px] p-6 md:p-8">
+                      <p className="font-label text-[10px] tracking-[0.2em] text-[#B4637A] uppercase mb-2">WHAT YOUR BUDGET CAN CREATE</p>
+                      <ul className="divide-y divide-[#0A4F4F]/10">
+                        {BUDGET_TIERS.map((tier) => (
+                          <li key={tier.price} className="py-4">
+                            <p className="font-price text-lg font-medium text-[#B4637A]">{tier.price}</p>
+                            <p className="text-sm text-[#0A4F4F]/70 mt-1 leading-relaxed">{tier.text}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-sm text-[#0A4F4F]/70 mt-2">Bridesmaid bouquets from <span className="font-price">GH₵200</span>. Mini bouquets of 2 to 3 stems from <span className="font-price">GH₵150</span>.</p>
+                      <Button
+                        onClick={() => goToContact(FLORAL_CATEGORY)}
+                        className="mt-6 w-full bg-[#B4637A] hover:bg-[#9D5368] text-white rounded-[16px] py-6 font-label text-[10px] tracking-[0.2em] uppercase"
+                      >
+                        SHARE MY BUDGET
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {floralTab === "packages" && (
+                  <div>
+                    <div className="grid md:grid-cols-3 gap-5">
+                      {BRIDAL_PACKAGES.map((pkg) => (
+                        <div key={pkg.id} className="bg-white rounded-[20px] p-6 md:p-8 flex flex-col">
+                          <h4 className="font-heading text-3xl text-[#0A4F4F] leading-tight">{pkg.name}</h4>
+                          <p className="text-sm text-[#0A4F4F]/65 mt-3 leading-relaxed flex-1">{pkg.note}</p>
+                          <div className="mt-6 flex items-end justify-between gap-3">
+                            <div>
+                              <p className="font-price text-xl font-medium text-[#B4637A]">{pkg.price}</p>
+                              <span className="font-price mt-1 inline-block rounded-full bg-[#FBF3F1] px-3 py-1 text-[11px] text-[#B4637A]">{pkg.save}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => goToContact(FLORAL_CATEGORY, BRIDAL_ENQUIRIES.find((e) => e.id === `rate-${pkg.id}`))}
+                              className="rounded-full bg-[#B4637A] px-5 py-2.5 text-xs font-medium text-white hover:bg-[#9D5368] transition-colors"
+                            >
+                              Enquire
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-5 mt-5">
+                      <div className="bg-white rounded-[20px] p-6 md:p-8">
+                        <p className="font-label text-[10px] tracking-[0.2em] text-[#B4637A] uppercase mb-2">ADD-ONS</p>
+                        <ul className="divide-y divide-[#0A4F4F]/10">
+                          {BRIDAL_ADDONS.map((a) => (
+                            <li key={a.name} className="py-3 flex items-baseline justify-between gap-4 text-sm">
+                              <span className="text-[#0A4F4F]">{a.name}</span>
+                              <span className="font-price text-[13px] font-medium text-[#0A4F4F] text-right">{a.price}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="bg-white rounded-[20px] p-6 md:p-8">
+                        <p className="font-label text-[10px] tracking-[0.2em] text-[#B4637A] uppercase mb-2">BOOKING</p>
+                        <p className="text-sm text-[#0A4F4F]/70 leading-relaxed">{BRIDAL_BOOKING}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
-
-          {/* Expanded Card Overlay */}
-          <AnimatePresence>
-            {expandedCard !== null && (
-              <>
-                <motion.div
-                  className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setExpandedCard(null)}
-                />
-                <div className="fixed inset-0 z-[101] flex items-center justify-center p-6 pointer-events-none">
-                  <motion.div
-                    layoutId={`business-card-${expandedCard}`}
-                    className="pointer-events-auto relative"
-                    style={{ rotate: 0 }}
-                  >
-                    <img
-                      src={cards[expandedCard]}
-                      alt={`Business Card ${expandedCard + 1}`}
-                      className="max-w-[92vw] max-h-[85vh] w-auto h-auto shadow-2xl rounded-sm"
-                    />
-                    <button
-                      onClick={() => setExpandedCard(null)}
-                      className="absolute -top-4 -right-4 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg font-label text-xs text-[#0A4F4F] hover:bg-[#F9F5EE] transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </motion.div>
-                </div>
-              </>
-            )}
-          </AnimatePresence>
 
           {/* About */}
           <section id="about" className="flex flex-col lg:flex-row bg-white">
@@ -451,10 +598,10 @@ export default function Home() {
           {/* Form & Contact */}
           <section id="contact" className="bg-[#0A4F4F] flex flex-col">
             {/* Top Half: Form */}
-            <div className="bg-white py-32 px-6 md:px-12 w-full">
+            <div className="bg-white py-20 md:py-32 px-6 md:px-12 w-full">
               <div className="max-w-4xl mx-auto">
                 <div className="mb-20 text-center">
-                  <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">BOOK A MOMENT</p>
+                  <p className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-6">BOOK A MOMENT</p>
                   <h3 className="font-heading text-4xl md:text-6xl text-[#0A4F4F]">Let's Create Together</h3>
                   <p className="font-sans text-sm text-[#0A4F4F]/60 mt-6">Prefer a quicker hello? Find us here.</p>
                   <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
@@ -495,9 +642,9 @@ export default function Home() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Name</FormLabel>
+                            <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Your Name" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                              <Input placeholder="Your Name" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -508,9 +655,9 @@ export default function Home() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Email</FormLabel>
+                            <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="Your Email" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                              <Input type="email" placeholder="Your Email" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -524,9 +671,9 @@ export default function Home() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Phone</FormLabel>
+                            <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Phone</FormLabel>
                             <FormControl>
-                              <Input placeholder="Your Phone (Optional)" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                              <Input placeholder="Your Phone (Optional)" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -537,9 +684,9 @@ export default function Home() {
                         name="eventDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Date</FormLabel>
+                            <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2" />
+                              <Input type="date" {...field} className="border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -552,16 +699,16 @@ export default function Home() {
                       name="service"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Service</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Service</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="border-0 border-b border-[#0A4F4F]/20 focus:ring-0 focus:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2 shadow-none">
+                              <SelectTrigger className="border-0 border-b border-[#0A4F4F]/20 focus:ring-0 focus:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2 shadow-none">
                                 <SelectValue placeholder="Select a service" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="rounded-none border-[#0A4F4F]/20 bg-white">
-                              {services.map(s => (
-                                <SelectItem key={s} value={s} className="font-heading text-lg focus:bg-[#F9F5EE] focus:text-[#0A4F4F] rounded-none cursor-pointer py-3">{s}</SelectItem>
+                              {formServices.map(s => (
+                                <SelectItem key={s} value={s} className="font-poppins text-lg focus:bg-[#F9F5EE] focus:text-[#0A4F4F] rounded-none cursor-pointer py-3">{s}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -570,14 +717,55 @@ export default function Home() {
                       )}
                     />
 
+                    <div className="md:col-span-2">
+                      <p className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase mb-2">Item you're enquiring about (optional)</p>
+                      <Select
+                        value={enquiryItem ? String(enquiryItem.id) : "none"}
+                        onValueChange={(v) => pickEnquiryItem(v === "none" ? null : enquirable.find((w: any) => String(w.id) === v) ?? null)}
+                      >
+                        <SelectTrigger className="border-0 border-b border-[#0A4F4F]/20 focus:ring-0 focus:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2 shadow-none">
+                          <SelectValue placeholder="A general enquiry" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[14px] border-[#0A4F4F]/20 bg-white max-h-72">
+                          <SelectItem value="none" className="font-poppins text-lg cursor-pointer py-3">A general enquiry</SelectItem>
+                          {enquirable.map((w: any) => (
+                            <SelectItem key={w.id} value={String(w.id)} className="font-poppins text-lg cursor-pointer py-3">
+                              {w.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {enquiryItem && (
+                        <div className="mt-4 flex items-center gap-4 rounded-[16px] bg-[#F9F5EE] p-3">
+                          {enquiryItem.images?.[0] ? (
+                            <img src={enquiryItem.images[0]} alt="" className="h-16 w-16 rounded-[12px] object-cover" />
+                          ) : (
+                            <div className="grid h-16 w-16 place-items-center rounded-[12px] bg-white font-poppins text-[10px] tracking-widest text-[#B4637A]">BRIDAL</div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-poppins text-xl text-[#0A4F4F] leading-tight truncate">{enquiryItem.title}</p>
+                            <p className="font-poppins text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase truncate">{enquiryItem.category}{enquiryItem.price ? " · " : ""}{enquiryItem.price && <span className="font-price">{enquiryItem.price}</span>}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => pickEnquiryItem(null)}
+                            aria-label="Remove item"
+                            className="grid h-8 w-8 place-items-center rounded-full text-[#0A4F4F]/60 hover:bg-white hover:text-[#0A4F4F]"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="message"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Message</FormLabel>
+                          <FormLabel className="font-poppins text-[10px] tracking-[0.2em] text-[#0A4F4F] uppercase">Message</FormLabel>
                           <FormControl>
-                            <Textarea placeholder="Tell us about your vision..." className="min-h-[100px] border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-heading pb-2 resize-none" {...field} />
+                            <Textarea placeholder="Tell us about your vision..." className="min-h-[100px] border-0 border-b border-[#0A4F4F]/20 focus-visible:ring-0 focus-visible:border-[#0A4F4F] rounded-none bg-transparent px-0 text-lg font-poppins pb-2 resize-none" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -585,7 +773,7 @@ export default function Home() {
                     />
 
                     <div className="pt-8">
-                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-label tracking-[0.2em] text-xs uppercase rounded-[16px] py-8 transition-colors">
+                      <Button type="submit" disabled={submitEnquiry.isPending} className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white font-poppins tracking-[0.2em] text-xs uppercase rounded-[16px] py-8 transition-colors">
                         {submitEnquiry.isPending ? "SENDING..." : "SEND ENQUIRY"}
                       </Button>
                     </div>
@@ -605,98 +793,126 @@ export default function Home() {
             </div>
           </footer>
 
-          {/* Portfolio Modal */}
+          {/* Piece details */}
           <Dialog open={!!activePortfolioItem} onOpenChange={(open) => !open && setActivePortfolioItem(null)}>
-            <DialogContent className="max-w-[100vw] w-full h-[100dvh] max-h-[100dvh] p-0 border-0 bg-black/95 rounded-none flex flex-col justify-center items-center">
+            <DialogContent
+              className="!block p-0 gap-0 overflow-hidden border-0 bg-white rounded-[22px] w-[calc(100vw-1.5rem)] max-w-5xl h-[calc(100dvh-1.5rem)] md:h-auto md:max-h-[88dvh] [&>button:last-child]:hidden"
+            >
               {activePortfolioItem && (
-                <div className="w-full h-full flex flex-col md:flex-row">
-                  {/* Left: Images */}
-                  <div className="flex-none h-[45vh] md:h-auto md:flex-1 relative overflow-hidden bg-[#0A0A0A]">
+                <div className="relative flex h-full flex-col md:grid md:h-[min(40rem,88dvh)] md:grid-cols-[1.1fr_1fr]">
+                  <button
+                    type="button"
+                    onClick={() => setActivePortfolioItem(null)}
+                    aria-label="Close"
+                    className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-[#0A4F4F] shadow-sm hover:bg-white transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                  {/* Photos */}
+                  <div className="relative shrink-0 h-[46dvh] md:h-full bg-[#F4EEE6]">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={selectedImageIndex}
                         src={activePortfolioItem.images[selectedImageIndex]}
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: "easeInOut" }}
-                        className="absolute inset-0 w-full h-full object-contain"
-                        alt={`${activePortfolioItem.title} - Image ${selectedImageIndex + 1}`}
+                        transition={{ duration: 0.35 }}
+                        className="absolute inset-0 h-full w-full object-contain md:object-cover"
+                        alt={`${activePortfolioItem.title} - photo ${selectedImageIndex + 1}`}
                       />
                     </AnimatePresence>
+
                     {activePortfolioItem.images.length > 1 && (
-                      <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-20">
-                        {activePortfolioItem.images.map((_: any, idx: number) => (
+                      <>
+                        {(["prev", "next"] as const).map((dir) => (
                           <button
-                            key={idx}
-                            onClick={() => setSelectedImageIndex(idx)}
-                            className={`h-1 transition-all duration-300 ${idx === selectedImageIndex ? 'w-8 bg-[#C9A84C]' : 'w-4 bg-white/30 hover:bg-white/60'}`}
-                          />
+                            key={dir}
+                            type="button"
+                            aria-label={dir === "prev" ? "Previous photo" : "Next photo"}
+                            onClick={() =>
+                              setSelectedImageIndex(
+                                (selectedImageIndex + (dir === "next" ? 1 : -1) + activePortfolioItem.images.length) %
+                                  activePortfolioItem.images.length,
+                              )
+                            }
+                            className={`absolute top-1/2 -translate-y-1/2 ${dir === "prev" ? "left-3" : "right-3"} grid h-9 w-9 place-items-center rounded-full bg-white/85 text-[#0A4F4F] backdrop-blur hover:bg-white transition-colors`}
+                          >
+                            {dir === "prev" ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                          </button>
                         ))}
-                      </div>
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 rounded-full bg-white/80 p-1.5 backdrop-blur">
+                          {activePortfolioItem.images.map((src: string, idx: number) => (
+                            <button
+                              key={src + idx}
+                              type="button"
+                              onClick={() => setSelectedImageIndex(idx)}
+                              aria-label={`Photo ${idx + 1}`}
+                              className={`h-10 w-10 overflow-hidden rounded-full border-2 transition-all ${idx === selectedImageIndex ? "border-[#C9A84C]" : "border-transparent opacity-70 hover:opacity-100"}`}
+                            >
+                              <img src={src} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
-                  
-                  {/* Right: Details */}
-                  <div className="w-full md:w-[400px] lg:w-[500px] bg-white flex-1 md:h-full p-6 md:p-12 overflow-y-auto">
-                    <button 
-                      onClick={() => setActivePortfolioItem(null)}
-                      className="absolute top-6 right-6 z-50 text-[#0A4F4F] hover:text-[#C9A84C] font-label text-[10px] tracking-[0.2em] uppercase"
-                    >
-                      CLOSE ✕
-                    </button>
-                    
-                    <div className="mt-4 md:mt-12 h-full flex flex-col">
-                      <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] mb-4 uppercase">{activePortfolioItem.category}</p>
-                      <h2 className="font-heading text-4xl lg:text-5xl text-[#0A4F4F] mb-6">{activePortfolioItem.title}</h2>
-                      
-                      {activePortfolioItem.description && (
-                        <p className="font-sans text-sm text-gray-600 mb-8 font-light leading-relaxed">
-                          {activePortfolioItem.description}
-                        </p>
+
+                  {/* Details */}
+                  <div className="relative flex min-h-0 flex-1 flex-col">
+
+                    <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-6 pb-4 md:px-10 md:pt-10">
+                      <p className="font-label text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-3">{activePortfolioItem.category}</p>
+                      <DialogTitle className="font-heading text-3xl md:text-4xl text-[#0A4F4F] leading-tight">
+                        {activePortfolioItem.title}
+                      </DialogTitle>
+                      <DialogDescription asChild>
+                        <div>
+                          {activePortfolioItem.description && (
+                            <p className="font-sans text-sm text-[#0A4F4F]/70 leading-relaxed mt-4">{activePortfolioItem.description}</p>
+                          )}
+                        </div>
+                      </DialogDescription>
+
+                      {(activePortfolioItem.packageDetails || activePortfolioItem.estimatedBudget) && (
+                        <dl className="mt-6 divide-y divide-[#0A4F4F]/10 rounded-[14px] bg-[#F9F5EE] px-4">
+                          {activePortfolioItem.packageDetails && (
+                            <div className="py-3">
+                              <dt className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F]/60 uppercase">Package details</dt>
+                              <dd className="mt-1 text-sm text-[#0A4F4F]">{activePortfolioItem.packageDetails}</dd>
+                            </div>
+                          )}
+                          {activePortfolioItem.estimatedBudget && (
+                            <div className="py-3">
+                              <dt className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F]/60 uppercase">Estimated budget</dt>
+                              <dd className="font-price mt-1 text-sm font-medium text-[#0A4F4F]">{activePortfolioItem.estimatedBudget}</dd>
+                            </div>
+                          )}
+                        </dl>
                       )}
 
-                      <div className="mt-auto space-y-6 pt-8 border-t border-[#0A4F4F]/10">
-                        {activePortfolioItem.packageDetails && (
-                          <div>
-                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">PACKAGE DETAILS</p>
-                            <p className="font-sans text-sm text-gray-600">{activePortfolioItem.packageDetails}</p>
-                          </div>
-                        )}
-                        {activePortfolioItem.estimatedBudget && (
-                          <div>
-                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">ESTIMATED BUDGET</p>
-                            <p className="font-sans text-sm text-[#0A4F4F]">{activePortfolioItem.estimatedBudget}</p>
-                          </div>
-                        )}
-                        {activePortfolioItem.tags && activePortfolioItem.tags.length > 0 && (
-                          <div>
-                            <p className="font-label text-[10px] tracking-[0.2em] text-[#0A4F4F] mb-2 uppercase">TAGS</p>
-                            <div className="flex flex-wrap gap-2">
-                              {activePortfolioItem.tags.map((tag: string) => (
-                                <span key={tag} className="px-3 py-1 bg-[#F9F5EE] text-[#0A4F4F] text-[10px] font-label tracking-widest uppercase">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="mt-12">
-                        <Button 
-                          onClick={() => {
-                            setActivePortfolioItem(null);
-                            setTimeout(() => {
-                              const el = document.getElementById('contact');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                            }, 300);
-                          }}
-                          className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white rounded-none py-6 font-label text-[10px] tracking-[0.2em] uppercase"
-                        >
-                          ENQUIRE ABOUT THIS STYLE
-                        </Button>
-                      </div>
+                      {activePortfolioItem.tags && activePortfolioItem.tags.length > 0 && (
+                        <div className="mt-6 flex flex-wrap gap-2">
+                          {activePortfolioItem.tags.map((tag: string) => (
+                            <span key={tag} className="rounded-full bg-[#F9F5EE] px-3 py-1 text-[10px] font-label tracking-widest uppercase text-[#0A4F4F]">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="shrink-0 border-t border-[#0A4F4F]/10 bg-white px-6 py-4 md:px-10 md:py-5">
+                      <Button
+                        onClick={() => {
+                          const item = activePortfolioItem;
+                          setActivePortfolioItem(null);
+                          setTimeout(() => goToContact(item.category, item), 250);
+                        }}
+                        className="w-full bg-[#0A4F4F] hover:bg-[#0D6E6E] text-white rounded-[16px] py-6 font-label text-[10px] tracking-[0.2em] uppercase"
+                      >
+                        ENQUIRE ABOUT THIS
+                      </Button>
                     </div>
                   </div>
                 </div>
